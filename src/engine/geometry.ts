@@ -12,6 +12,9 @@ export function resamplePathByArcLength(path: Point[], count: number): Point[] {
   if (path.length < 2) {
     throw new Error('resamplePathByArcLength requires at least two points');
   }
+  if (count < 2) {
+    throw new Error('resamplePathByArcLength requires a sample count of at least two');
+  }
 
   const segmentLengths: number[] = [];
   let totalLength = 0;

@@ -53,12 +53,12 @@ describe('scoreTrace', () => {
 
   it('scores an incomplete trace lower than a complete one', () => {
     const complete = tracePoints(0, 0, 100, 0, 40);
-    const incomplete = tracePoints(0, 0, 50, 0, 20);
+    const incomplete = tracePoints(0, 0, 30, 0, 12);
 
     const completeResult = scoreTrace(straightLine, complete);
     const incompleteResult = scoreTrace(straightLine, incomplete);
 
-    expect(incompleteResult.coveragePercent).toBeLessThanOrEqual(60);
+    expect(incompleteResult.coveragePercent).toBeLessThanOrEqual(45);
     expect(incompleteResult.score).toBeLessThan(completeResult.score);
     expect(incompleteResult.passed).toBe(false);
   });
@@ -80,6 +80,7 @@ describe('scoreTrace', () => {
 
     expect(result.score).toBe(0);
     expect(result.coveragePercent).toBe(0);
+    expect(result.averageDistance).toBeNull();
     expect(result.passed).toBe(false);
   });
 
@@ -90,5 +91,23 @@ describe('scoreTrace', () => {
   it('exposes the pass threshold used to compute `passed`', () => {
     expect(PASS_THRESHOLD).toBeGreaterThan(0);
     expect(PASS_THRESHOLD).toBeLessThanOrEqual(100);
+  });
+
+  it('always agrees between the rounded score and `passed`', () => {
+    // Regression guard: `passed` must be derived from the same rounded score that's returned,
+    // not the pre-rounding value — otherwise e.g. a displayed score of 70 could come back
+    // `passed: false` because the unrounded score was 69.6.
+    const traces = [
+      tracePoints(0, 0, 100, 0, 40),
+      tracePoints(0, 0, 30, 0, 12),
+      tracePoints(0, 200, 100, 200, 40),
+      [...tracePoints(0, 0, 100, 0, 40)].reverse(),
+      [],
+    ];
+
+    for (const traced of traces) {
+      const result = scoreTrace(straightLine, traced);
+      expect(result.passed).toBe(result.score >= PASS_THRESHOLD);
+    }
   });
 });
