@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "num-1",
+      "script": "number",
+      "category": "number",
+      "displayLabel": "1",
+      "tier": "free",
+      "strokes": [
+        [
+          { "x": 120, "y": 90 },
+          { "x": 150, "y": 60 },
+          { "x": 150, "y": 240 }
+        ]
+      ]
+    },
+    {
+      "id": "num-7",
+      "script": "number",
+      "category": "number",
+      "displayLabel": "7",
+      "tier": "paid",
+      "strokes": [
+        [
+          { "x": 90, "y": 70 },
+          { "x": 220, "y": 70 },
+          { "x": 130, "y": 240 }
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "hi-vowel-a",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "अ",
+      "tier": "free",
+      "note": "Placeholder shape only, for pipeline testing — not a verified/authoritative Devanagari stroke path. Needs real authored data before shipping.",
+      "strokes": [
+        [
+          { "x": 80, "y": 150 },
+          { "x": 94, "y": 181.8 },
+          { "x": 108, "y": 206.6 },
+          { "x": 122, "y": 219.1 },
+          { "x": 136, "y": 216.6 },
+          { "x": 150, "y": 199.5 },
+          { "x": 164, "y": 171.6 },
+          { "x": 178, "y": 139 },
+          { "x": 192, "y": 108.9 },
+          { "x": 206, "y": 87.6 },
+          { "x": 220, "y": 80 }
+        ]
+      ]
+    }
+  ]
+}

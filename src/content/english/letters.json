@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "en-i-upper",
+      "script": "english",
+      "category": "letter",
+      "displayLabel": "I",
+      "tier": "free",
+      "strokes": [
+        [
+          { "x": 150, "y": 60 },
+          { "x": 150, "y": 240 }
+        ]
+      ]
+    },
+    {
+      "id": "en-l-upper",
+      "script": "english",
+      "category": "letter",
+      "displayLabel": "L",
+      "tier": "paid",
+      "strokes": [
+        [
+          { "x": 90, "y": 60 },
+          { "x": 90, "y": 240 },
+          { "x": 220, "y": 240 }
+        ]
+      ]
+    },
+    {
+      "id": "en-c-upper",
+      "script": "english",
+      "category": "letter",
+      "displayLabel": "C",
+      "tier": "paid",
+      "strokes": [
+        [
+          { "x": 218.9, "y": 92.1 },
+          { "x": 187.4, "y": 68.1 },
+          { "x": 148.6, "y": 60 },
+          { "x": 110, "y": 69.4 },
+          { "x": 79.3, "y": 94.4 },
+          { "x": 62.2, "y": 130.2 },
+          { "x": 62.2, "y": 169.8 },
+          { "x": 79.3, "y": 205.6 },
+          { "x": 110, "y": 230.6 },
+          { "x": 148.6, "y": 240 },
+          { "x": 187.4, "y": 231.9 },
+          { "x": 218.9, "y": 207.9 }
+        ]
+      ]
+    }
+  ]
+}
