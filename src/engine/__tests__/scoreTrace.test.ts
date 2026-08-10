@@ -1,21 +1,12 @@
 import { PASS_THRESHOLD, scoreTrace } from '../scoreTrace';
-import { Point, StencilPath } from '../types';
+import { StencilPath } from '../types';
+import { tracePoints } from './testHelpers';
 
 /** A straight horizontal line from (0,0) to (100,0), used as the stencil for every test below. */
 const straightLine: StencilPath = [
   { x: 0, y: 0 },
   { x: 100, y: 0 },
 ];
-
-/** Evenly spaced points along a straight segment, walked from (x0,y0) to (x1,y1). */
-function tracePoints(x0: number, y0: number, x1: number, y1: number, count: number): Point[] {
-  const points: Point[] = [];
-  for (let i = 0; i < count; i++) {
-    const t = i / (count - 1);
-    points.push({ x: x0 + (x1 - x0) * t, y: y0 + (y1 - y0) * t });
-  }
-  return points;
-}
 
 describe('scoreTrace', () => {
   it('scores a precise, complete, forward trace highly', () => {

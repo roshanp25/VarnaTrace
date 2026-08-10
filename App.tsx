@@ -3,20 +3,22 @@ import { StatusBar } from 'expo-status-bar';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { allCharacters, CharacterContent } from './src/content';
-import { Point, TraceScoreResult } from './src/engine';
-import { RewardOverlay, TracingCanvas } from './src/features/tracing';
+import { MultiStrokeScoreResult } from './src/engine';
+import { MultiStrokeTracingCanvas, RewardOverlay } from './src/features/tracing';
 
 export default function App() {
   const { width, height } = useWindowDimensions();
   const canvasSize = Math.min(width, height) * 0.7;
 
   const [selected, setSelected] = useState<CharacterContent>(allCharacters[0]);
-  const [tracedPoints, setTracedPoints] = useState<Point[]>([]);
-  const [result, setResult] = useState<TraceScoreResult | null>(null);
+  const [result, setResult] = useState<MultiStrokeScoreResult | null>(null);
+  // Bumped to force MultiStrokeTracingCanvas to remount and restart from stroke 1 on "Clear",
+  // since it owns its own stroke-sequencing state (not lifted here).
+  const [canvasKey, setCanvasKey] = useState(0);
 
   const reset = () => {
-    setTracedPoints([]);
     setResult(null);
+    setCanvasKey((key) => key + 1);
   };
 
   const selectCharacter = (character: CharacterContent) => {
@@ -28,7 +30,8 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.title}>Trace: {selected.displayLabel}</Text>
       <Text style={styles.subtitle}>
-        {selected.script} · {selected.tier}
+        {selected.script} · {selected.tier} · {selected.strokes.length} stroke
+        {selected.strokes.length > 1 ? 's' : ''}
       </Text>
 
       <ScrollView horizontal style={styles.picker} contentContainerStyle={styles.pickerContent}>
@@ -43,11 +46,10 @@ export default function App() {
         ))}
       </ScrollView>
 
-      <TracingCanvas
-        stencil={selected.strokes[0]}
+      <MultiStrokeTracingCanvas
+        key={canvasKey}
+        strokes={selected.strokes}
         size={canvasSize}
-        tracedPoints={tracedPoints}
-        onTracedPointsChange={setTracedPoints}
         onComplete={setResult}
       />
 

@@ -18,6 +18,10 @@ export interface TracingCanvasProps {
   onTracedPointsChange: (points: Point[]) => void;
   /** Called once, when the finger/Pencil lifts, with the score for the completed trace. */
   onComplete: (result: TraceScoreResult) => void;
+  /** Already-finished strokes of a multi-stroke character, rendered solid beneath the active trace. */
+  completedStrokes?: Point[][];
+  /** Other strokes of a multi-stroke character not active yet, rendered as faint guides. */
+  otherStencilGuides?: StencilPath[];
 }
 
 const DEFAULT_VIEW_BOX_SIZE = 300;
@@ -34,6 +38,8 @@ export function TracingCanvas({
   tracedPoints,
   onTracedPointsChange,
   onComplete,
+  completedStrokes = [],
+  otherStencilGuides = [],
 }: TracingCanvasProps) {
   const strokePoints = useRef<Point[]>([]);
 
@@ -82,6 +88,19 @@ export function TracingCanvas({
   return (
     <View style={{ width: size, height: size }} {...panResponder.panHandlers}>
       <Svg width={size} height={size} viewBox={viewBox}>
+        {otherStencilGuides.map((guide, i) => (
+          <Path
+            key={`other-guide-${i}`}
+            d={pointsToSvgPath(guide)}
+            stroke="#c7c7cc"
+            strokeOpacity={0.4}
+            strokeWidth={guideStrokeWidth}
+            strokeDasharray={`${guideStrokeWidth} ${guideStrokeWidth}`}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        ))}
         <Path
           d={pointsToSvgPath(stencil)}
           stroke="#c7c7cc"
@@ -91,6 +110,17 @@ export function TracingCanvas({
           strokeLinejoin="round"
           fill="none"
         />
+        {completedStrokes.map((strokePointsForPath, i) => (
+          <Path
+            key={`completed-${i}`}
+            d={pointsToSvgPath(strokePointsForPath)}
+            stroke="#3478f6"
+            strokeWidth={traceStrokeWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        ))}
         {tracedPoints.length > 0 && (
           <Path
             d={pointsToSvgPath(tracedPoints)}

@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
-import { PASS_THRESHOLD, TraceScoreResult } from '../../engine';
+import { PASS_THRESHOLD } from '../../engine';
+
+/** Both TraceScoreResult and MultiStrokeScoreResult satisfy this — the overlay only needs the final score/pass state, not stroke-level detail. */
+interface ScoreSummary {
+  score: number;
+  passed: boolean;
+}
 
 export interface RewardOverlayProps {
-  result: TraceScoreResult;
+  result: ScoreSummary;
   /** Called when the child taps the overlay to try again. */
   onDismiss: () => void;
 }
