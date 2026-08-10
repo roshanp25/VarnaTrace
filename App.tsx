@@ -1,12 +1,24 @@
 import { useState } from 'react';
+import { NotoSansDevanagari_400Regular, useFonts } from '@expo-google-fonts/noto-sans-devanagari';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { allCharacters, CharacterContent } from './src/content';
+import { allCharacters, CharacterContent, Script } from './src/content';
 import { MultiStrokeScoreResult } from './src/engine';
 import { MultiStrokeTracingCanvas, RewardOverlay } from './src/features/tracing';
 
+/**
+ * System/platform default fonts don't reliably include good Devanagari glyphs (rendering can come
+ * out malformed depending on the OS/browser's font-fallback choice), so Hindi text explicitly uses
+ * a bundled font instead of leaving it to fallback. English/numbers use the platform default.
+ */
+function fontFamilyForScript(script: Script): string | undefined {
+  return script === 'hindi' ? 'NotoSansDevanagari_400Regular' : undefined;
+}
+
 export default function App() {
+  const [fontsLoaded] = useFonts({ NotoSansDevanagari_400Regular });
+
   const { width, height } = useWindowDimensions();
   const canvasSize = Math.min(width, height) * 0.7;
 
@@ -26,9 +38,15 @@ export default function App() {
     reset();
   };
 
+  if (!fontsLoaded) {
+    return <View style={styles.container} />;
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Trace: {selected.displayLabel}</Text>
+      <Text style={[styles.title, { fontFamily: fontFamilyForScript(selected.script) }]}>
+        Trace: {selected.displayLabel}
+      </Text>
       <Text style={styles.subtitle}>
         {selected.script} · {selected.tier} · {selected.strokes.length} stroke
         {selected.strokes.length > 1 ? 's' : ''}
@@ -41,7 +59,14 @@ export default function App() {
             style={[styles.pickerItem, character.id === selected.id && styles.pickerItemSelected]}
             onPress={() => selectCharacter(character)}
           >
-            <Text style={styles.pickerItemText}>{character.displayLabel}</Text>
+            <Text
+              style={[
+                styles.pickerItemText,
+                { fontFamily: fontFamilyForScript(character.script) },
+              ]}
+            >
+              {character.displayLabel}
+            </Text>
           </Pressable>
         ))}
       </ScrollView>
