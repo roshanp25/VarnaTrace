@@ -55,9 +55,8 @@ export function MultiStrokeTracingCanvas({
     setCurrentPoints(points);
   };
 
-  // eslint-disable-next-line react-hooks/refs -- this function is only ever invoked later, from a
-  // real touch-release event, never synchronously during render (see TracingCanvas's identical
-  // exception for the same reason).
+  // This function is only ever invoked later, from a real touch-release event, never
+  // synchronously during render (see TracingCanvas's identical rationale for the same pattern).
   const [handleStrokeComplete] = useState(() => () => {
     const updatedStrokes = [...completedStrokesRef.current, currentPointsRef.current];
     completedStrokesRef.current = updatedStrokes;

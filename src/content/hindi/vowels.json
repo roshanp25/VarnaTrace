@@ -7,20 +7,499 @@
       "category": "vowel",
       "displayLabel": "अ",
       "tier": "free",
-      "note": "Placeholder shape only, for pipeline testing — not a verified/authoritative Devanagari stroke path. Needs real authored data before shipping.",
       "strokes": [
         [
-          { "x": 80, "y": 150 },
-          { "x": 94, "y": 181.8 },
-          { "x": 108, "y": 206.6 },
-          { "x": 122, "y": 219.1 },
-          { "x": 136, "y": 216.6 },
-          { "x": 150, "y": 199.5 },
-          { "x": 164, "y": 171.6 },
-          { "x": 178, "y": 139 },
-          { "x": 192, "y": 108.9 },
-          { "x": 206, "y": 87.6 },
-          { "x": 220, "y": 80 }
+          {
+            "x": 69.92,
+            "y": 67.35
+          },
+          {
+            "x": 80.78,
+            "y": 70.88
+          },
+          {
+            "x": 92.37,
+            "y": 70.55
+          },
+          {
+            "x": 103.98,
+            "y": 70.79
+          },
+          {
+            "x": 115.56,
+            "y": 71.6
+          },
+          {
+            "x": 126.56,
+            "y": 75.12
+          },
+          {
+            "x": 135.34,
+            "y": 82.56
+          },
+          {
+            "x": 139.97,
+            "y": 93.1
+          },
+          {
+            "x": 138.86,
+            "y": 104.48
+          },
+          {
+            "x": 134.76,
+            "y": 115.16
+          },
+          {
+            "x": 141.44,
+            "y": 123.93
+          },
+          {
+            "x": 146.79,
+            "y": 132.16
+          },
+          {
+            "x": 148.46,
+            "y": 143.65
+          },
+          {
+            "x": 149.76,
+            "y": 155.19
+          },
+          {
+            "x": 150.68,
+            "y": 166.77
+          },
+          {
+            "x": 151.05,
+            "y": 178.38
+          },
+          {
+            "x": 150.9,
+            "y": 189.99
+          },
+          {
+            "x": 143.82,
+            "y": 187.77
+          },
+          {
+            "x": 132.98,
+            "y": 186.39
+          },
+          {
+            "x": 126.12,
+            "y": 195.63
+          },
+          {
+            "x": 115.64,
+            "y": 200.37
+          },
+          {
+            "x": 104.1,
+            "y": 200.79
+          },
+          {
+            "x": 92.92,
+            "y": 197.74
+          },
+          {
+            "x": 82.84,
+            "y": 192.03
+          },
+          {
+            "x": 74.17,
+            "y": 184.33
+          },
+          {
+            "x": 66.92,
+            "y": 175.28
+          },
+          {
+            "x": 60.66,
+            "y": 165.49
+          },
+          {
+            "x": 53.86,
+            "y": 156.08
+          },
+          {
+            "x": 45.0,
+            "y": 148.71
+          }
+        ],
+        [
+          {
+            "x": 131.81,
+            "y": 132.95
+          },
+          {
+            "x": 138.78,
+            "y": 140.42
+          },
+          {
+            "x": 147.93,
+            "y": 145.13
+          },
+          {
+            "x": 157.65,
+            "y": 148.52
+          },
+          {
+            "x": 167.8,
+            "y": 150.25
+          },
+          {
+            "x": 178.1,
+            "y": 150.43
+          },
+          {
+            "x": 188.38,
+            "y": 151.06
+          },
+          {
+            "x": 196.56,
+            "y": 157.02
+          }
+        ],
+        [
+          {
+            "x": 193.4,
+            "y": 72.79
+          },
+          {
+            "x": 200.77,
+            "y": 82.67
+          },
+          {
+            "x": 204.79,
+            "y": 94.34
+          },
+          {
+            "x": 206.01,
+            "y": 106.67
+          },
+          {
+            "x": 206.01,
+            "y": 119.08
+          },
+          {
+            "x": 206.01,
+            "y": 131.48
+          },
+          {
+            "x": 206.01,
+            "y": 143.89
+          },
+          {
+            "x": 206.01,
+            "y": 156.3
+          },
+          {
+            "x": 206.01,
+            "y": 168.7
+          },
+          {
+            "x": 206.01,
+            "y": 181.11
+          },
+          {
+            "x": 206.01,
+            "y": 193.52
+          },
+          {
+            "x": 206.13,
+            "y": 205.92
+          },
+          {
+            "x": 207.76,
+            "y": 218.19
+          },
+          {
+            "x": 212.38,
+            "y": 229.66
+          },
+          {
+            "x": 218.62,
+            "y": 240.39
+          }
+        ],
+        [
+          {
+            "x": 159.02,
+            "y": 59.61
+          },
+          {
+            "x": 169.68,
+            "y": 66.41
+          },
+          {
+            "x": 181.72,
+            "y": 70.07
+          },
+          {
+            "x": 194.35,
+            "y": 70.64
+          },
+          {
+            "x": 207.0,
+            "y": 70.64
+          },
+          {
+            "x": 219.64,
+            "y": 70.64
+          },
+          {
+            "x": 232.27,
+            "y": 71.23
+          },
+          {
+            "x": 244.31,
+            "y": 74.92
+          },
+          {
+            "x": 255.0,
+            "y": 81.67
+          }
+        ]
+      ],
+      "note": "Derived from a CC BY-SA 3.0 Wikimedia Commons stroke-order reference; see src/content/hindi/source-attribution.json for provenance."
+    },
+    {
+      "id": "hi-vowel-aa",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "आ",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-i",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "इ",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-ii",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "ई",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-u",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "उ",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-uu",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "ऊ",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-ri",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "ऋ",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-e",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "ए",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-ai",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "ऐ",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-o",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "ओ",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-au",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "औ",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-am",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "अं",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
+    },
+    {
+      "id": "hi-vowel-ah",
+      "script": "hindi",
+      "category": "vowel",
+      "displayLabel": "अः",
+      "tier": "free",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
         ]
       ]
     }

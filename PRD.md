@@ -1,11 +1,54 @@
 # VarnaTrace — Product Requirements Document
 
-Status: **DRAFT — awaiting review**
-Last updated: 2026-08-09
+Status: **DRAFT — awaiting formal review**, but implementation has proceeded past several open
+decisions below via direct confirmation during build sessions — see Section 0.
+Last updated: 2026-08-11
 
 App Store listing:
 - App Name: **VarnaTrace: English & Hindi** (27 chars)
 - Subtitle: **Handwriting Tracing for Kids** (28 chars)
+
+---
+
+## 0. Current Status (read this first)
+
+Living build-progress tracker against Section 7's build sequence. This is the fastest way for a
+new session to know what's real vs. still planned — everything below Section 1 is still the
+requirements source of truth, but may describe things not built yet.
+
+### Done
+1. **Project scaffolding** — Expo + TypeScript, repo/folder structure per Section 4 (`src/engine`, `src/features`, `src/content`, `src/services`).
+2. **Storage abstraction** — `src/services/storage/{StorageService.ts,AsyncStorageService.ts}`. Defined and tested, but **not yet consumed by any feature** — nothing needs persistence until gating/parental-gate exist.
+3. **Scoring engine (test-first)** — `src/engine/`: `scoreTrace.ts` (single stroke: accuracy + coverage + direction) and `scoreMultiStrokeTrace.ts` (multi-stroke; a character only "passes" if *every* stroke individually passes). Fully unit-tested, zero UI dependencies, per Section 4.
+4. **Tracing UI** — `src/features/tracing/`: `TracingCanvas.tsx` (single-stroke SVG canvas, touch + Apple Pencil via `PanResponder`), `MultiStrokeTracingCanvas.tsx` (sequences a character's strokes one at a time), `RewardOverlay.tsx`. Wired into `App.tsx`, which is currently a flat debug-style screen (character picker + canvas) — **not** the real app shell/navigation.
+5. **CI** — `.github/workflows/ci.yml` runs typecheck + lint + test on every push/PR.
+6. **Content data — Hindi is essentially done, English/numbers are placeholder-only:**
+   - Hindi vowels: **13/13** (अ आ इ ई उ ऊ ऋ ए ऐ ओ औ अं अः), real hand-traced stroke data, `tier: free`.
+   - Hindi consonants: **33/33** (क–ह), real hand-traced stroke data, `tier: paid`.
+   - Hindi conjuncts (क्ष त्र ज्ञ, per Section 3.1): **not started** — no entries at all yet.
+   - English letters: **4/26** (I, L, C, T) — early scaffolding samples, not the full alphabet.
+   - Numbers: **2/50** (1, 7) — same, sample only.
+   - Full detail on how the Hindi data was produced (tooling, validation, what's still manual): **`docs/devanagari-stroke-data.md`**.
+7. **Hindi text rendering fix** — `Text` components had no explicit `fontFamily`, so Devanagari characters fell back to whatever font the OS/browser picked (inconsistent, and rendered malformed in the web preview). Fixed by bundling `@expo-google-fonts/noto-sans-devanagari` + `expo-font` and applying `NotoSansDevanagari_400Regular` specifically where `character.script === 'hindi'` (English/numbers keep the platform default). Verified in-browser: the font loads (`status: "loaded"`), applies only to Hindi text nodes. **Any new UI that renders Hindi character text needs this same treatment** — don't assume default `Text` styling handles Devanagari.
+
+**Verified working state as of last check:** typecheck clean, lint clean, 296 tests passing across 6 suites (includes per-character hand-traced-data validation tests). A good baseline to build on from a fresh session.
+
+### Not started
+- **Free/paid content gating (Section 3.6 / build step 6)** — data model only right now. Every character has `tier: 'free'|'paid'` and `getFreeCharacters()` exists (`src/content/index.ts`), but **nothing enforces it in the UI** — `App.tsx`'s picker lets you open any character regardless of tier, no paywall screen exists. `src/features/content-gating/` is currently just a placeholder README.
+- **Parental gate** — not started. `src/features/parental-gate/` is currently just a placeholder README.
+- **IAP / purchase flow** — not started (blocked on the two items above).
+- **Real app shell/navigation** — `App.tsx` is a single flat screen, not the actual product UI (no separate script/category browsing, no home screen).
+- **Audio** (reward sounds) — not started.
+- **Hindi conjuncts, full English alphabet, full 1–50 numbers** — content authoring not started for these (see above).
+
+### Deviations from this document worth knowing about
+- **Section 3.6's free/paid split** described "a curated mix" (a few vowels + a few consonants + numbers 1–10), deliberately *not* split along script/category lines, so the free tier would show quality across both scripts. **What actually shipped in the data is a straight category split: all 13 vowels free, all 33 consonants paid.** Decided directly with the user during the 2026-08-11 content session — simpler to reason about, but a real change from the original plan. If/when the gating screen gets built, use this actual split unless told otherwise; update this doc if it changes again.
+- **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html`, an HTML page with no build step) that the user runs themselves — served locally (`npx serve tools`) and used from an iPhone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. An earlier attempt used auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`); the hand-tracing tool superseded it for actual content production. See `docs/devanagari-stroke-data.md` for why and how.
+
+### Where to look next
+- `docs/devanagari-stroke-data.md` — the Hindi stroke-data pipeline in full: the hand-tracing tool workflow, the validation/repair tooling, data provenance, and exactly how to add the missing conjuncts.
+- `tools/devanagari/` — Python tooling: `validate_hand_traces.py` (checks hand-traced data for the "forgot to click Finish Stroke" bug pattern), `repair_hand_traces.py` (heuristic auto-split + debug visualization, requires visual approval before use), `generate_content_entries.py` (adds `CharacterContent` entries for characters that have trace data but no id/tier yet), `import_stroke_order.py`/`svg_path.py`/`geometry.py` (the earlier, now-secondary Wikimedia SVG pipeline).
+- `src/content/handTracedStrokes.ts` — where hand-traced data (`assets/data/devanagari-{vowels,consonants}-strokes.json`) gets merged over the base content JSON at runtime.
 
 ---
 
@@ -119,13 +162,13 @@ These are constraints on *how* we build, meant to prevent tech debt as content a
 
 Confirmed order, one step at a time — after each step, stop and wait for review before moving to the next:
 
-1. **Project scaffolding** — repo, TypeScript config, folder structure, base dependencies.
-2. **Storage abstraction layer** — `StorageService` interface + a concrete implementation.
-3. **Scoring engine (test-first)** — define known-good/known-bad trace test cases, then implement the pure scoring module to pass them.
-4. **Tracing UI** — the canvas/interaction layer that captures touch/Pencil input and renders stencils, wired to the scoring engine.
-5. **Content data** — English + Hindi character JSON data sets (stencil paths + metadata), per Open Decision #4.
-6. **Free/paid content gating** — logic that determines which content is accessible, backed by `StorageService`.
-7. **Parental gate** — the math-challenge (or similar) screen that must be passed before reaching any paywall.
+1. ✅ **Project scaffolding** — repo, TypeScript config, folder structure, base dependencies.
+2. ✅ **Storage abstraction layer** — `StorageService` interface + a concrete implementation. (Built, unused so far — see Section 0.)
+3. ✅ **Scoring engine (test-first)** — define known-good/known-bad trace test cases, then implement the pure scoring module to pass them.
+4. ✅ **Tracing UI** — the canvas/interaction layer that captures touch/Pencil input and renders stencils, wired to the scoring engine.
+5. 🟡 **Content data** — English + Hindi character JSON data sets (stencil paths + metadata), per Open Decision #4. Hindi vowels + consonants done (46/49); Hindi conjuncts, full English alphabet, full 1–50 numbers still to do. See Section 0.
+6. ⬜ **Free/paid content gating** — logic that determines which content is accessible, backed by `StorageService`. Data model (`tier` field) exists; no enforcement/paywall UI yet.
+7. ⬜ **Parental gate** — the math-challenge (or similar) screen that must be passed before reaching any paywall.
 
 Flag to me if you think a different order makes more sense — one candidate worth considering: building the parental gate *before* content gating, since content gating's paywall screen depends on it existing. I've kept your original order above since it's still logically valid (gate can be a stub during step 6 and wired for real in step 7), but wanted to surface the dependency.
 

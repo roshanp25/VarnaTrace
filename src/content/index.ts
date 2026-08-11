@@ -1,11 +1,19 @@
 import englishLetters from './english/letters.json';
+import { applyHandTracedStrokes } from './handTracedStrokes';
+import hindiConsonants from './hindi/consonants.json';
 import hindiVowels from './hindi/vowels.json';
 import numbers from './numbers/numbers.json';
 import { CharacterContent, CharacterContentFile } from './types';
 
-const files = [englishLetters, hindiVowels, numbers] as CharacterContentFile[];
+const files = [englishLetters, hindiVowels, hindiConsonants, numbers] as CharacterContentFile[];
 
-export const allCharacters: CharacterContent[] = files.flatMap((file) => file.characters);
+/** Must match TracingCanvas's own DEFAULT_VIEW_BOX_SIZE — content is authored in this space. */
+const VIEW_BOX_SIZE = 300;
+
+export const allCharacters: CharacterContent[] = applyHandTracedStrokes(
+  files.flatMap((file) => file.characters),
+  VIEW_BOX_SIZE,
+);
 
 export function getCharacterById(id: string): CharacterContent | undefined {
   return allCharacters.find((character) => character.id === id);

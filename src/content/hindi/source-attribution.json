@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "characterId": "hi-vowel-a",
+      "displayLabel": "अ",
+      "source": {
+        "type": "wikimedia-commons",
+        "url": "https://commons.wikimedia.org/wiki/File:Devanagari_%E0%A4%85_stroke_order.svg",
+        "author": "Saurmandal",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+      },
+      "dateImported": "2026-08-09",
+      "derivation": "Geometry was derived, not copied verbatim: the source SVG's filled calligraphic-stroke outlines were converted to single-line centerline trajectories (via boundary-chain pairing), stroke grouping/order was recovered from the source's gray-to-black stroke-reveal frames, and direction/start-point was recovered from the source's start-position markers. Coordinates were then rescaled into the app's 0-300 canvas.",
+      "strokeCount": 4,
+      "manualCorrections": []
+    }
+  ]
+}

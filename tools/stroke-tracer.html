@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Devanagari Stroke Tracer</title>
+<style>
+  :root{
+    --paper:#eae5d9;
+    --paper-line:#d8d0bd;
+    --ink:#232326;
+    --ink-soft:#4b4a52;
+    --accent:#8a2e25;
+    --accent-soft:#c47e73;
+    --panel:#f4f1e8;
+    --ok:#3c5a44;
+    --warn:#a24c2c;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%; overscroll-behavior:none;}
+  body{
+    margin:0;
+    font-family:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+    background:var(--paper);
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    height:100dvh;
+    overflow:hidden;
+    touch-action:manipulation;
+  }
+
+  .topbar{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    background:var(--panel);
+    border-bottom:1px solid var(--paper-line);
+  }
+  .menuBtn{
+    display:none;
+    font-size:18px;
+    background:transparent;
+    border:1px solid var(--paper-line);
+    border-radius:6px;
+    width:38px; height:38px;
+    cursor:pointer;
+  }
+  .current-char{
+    font-family:'Noto Sans Devanagari','Mangal','Nirmala UI',sans-serif;
+    font-size:22px;
+    min-width:30px;
+  }
+  .progress{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-left:auto;
+    text-align:right;
+  }
+  .storage-note{
+    font-size:10px;
+    color:var(--warn);
+    margin-left:8px;
+  }
+
+  .body-flex{
+    flex:1;
+    display:flex;
+    min-height:0;
+  }
+
+  .sidebar{
+    width:210px;
+    flex:0 0 210px;
+    background:var(--panel);
+    border-right:1px solid var(--paper-line);
+    display:flex;
+    flex-direction:column;
+    padding:10px 10px;
+    overflow-y:auto;
+  }
+  .group-label{
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:10px 0 5px;
+  }
+  .char-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:4px;
+  }
+  .char-btn{
+    font-family:'Noto Sans Devanagari','Mangal','Nirmala UI',sans-serif;
+    font-size:16px;
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-radius:6px;
+    padding:8px 0;
+    cursor:pointer;
+    color:var(--ink);
+    position:relative;
+  }
+  .char-btn.active{
+    border-color:var(--accent);
+    background:#fff;
+    box-shadow:0 0 0 1px var(--accent);
+  }
+  .char-btn.done::after{
+    content:'';
+    position:absolute;
+    top:3px; right:4px;
+    width:5px; height:5px;
+    border-radius:50%;
+    background:var(--ok);
+  }
+  .sidebar-backdrop{display:none;}
+
+  .main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    min-height:0;
+  }
+
+  .control-row{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 8px;
+    background:var(--panel);
+    border-bottom:1px solid var(--paper-line);
+    flex-wrap:wrap;
+  }
+  .seg{
+    display:flex;
+    border:1px solid var(--paper-line);
+    border-radius:7px;
+    overflow:hidden;
+  }
+  .seg button{
+    font-family:inherit;
+    font-size:12.5px;
+    background:var(--paper);
+    border:none;
+    border-right:1px solid var(--paper-line);
+    padding:9px 12px;
+    min-height:40px;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .seg button:last-child{border-right:none;}
+  .seg button.active{
+    background:var(--accent);
+    color:#fdf9f0;
+  }
+  .zoomctl{
+    display:flex;
+    align-items:center;
+    border:1px solid var(--paper-line);
+    border-radius:7px;
+    overflow:hidden;
+  }
+  .zoomctl button{
+    font-family:inherit;
+    font-size:14px;
+    background:var(--paper);
+    border:none;
+    border-right:1px solid var(--paper-line);
+    height:40px;
+    padding:0 10px;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .zoomctl button:last-child{border-right:none;}
+  .zoomctl .zlabel{
+    font-size:12px;
+    color:var(--ink-soft);
+    padding:0 8px;
+    min-width:48px;
+    text-align:center;
+    border-right:1px solid var(--paper-line);
+    height:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .spacer{flex:1 1 auto;}
+
+  .banner{
+    flex:0 0 auto;
+    font-size:12px;
+    color:#5b4630;
+    background:#f3e8d4;
+    border-bottom:1px solid var(--paper-line);
+    padding:7px 12px;
+    text-align:center;
+  }
+  .banner .sub{
+    display:block;
+    font-size:10.5px;
+    color:#8a7554;
+    margin-top:1px;
+  }
+
+  .stage-area{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:0;
+    padding:8px;
+    overflow:hidden;
+    position:relative;
+  }
+  .scroll-viewport{
+    position:relative;
+    overflow:hidden;
+    background:#fbf9f2;
+    border:1px solid var(--paper-line);
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
+    border-radius:3px;
+  }
+  .stage{
+    position:absolute;
+    top:0; left:0;
+    transform-origin:50% 50%;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
+  canvas{
+    position:absolute;
+    top:0; left:0;
+    width:100%;
+    height:100%;
+    display:block;
+    touch-action:none;
+  }
+
+  .action-bar{
+    flex:0 0 auto;
+    display:flex;
+    gap:6px;
+    padding:8px 8px 4px;
+    background:var(--panel);
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .action-bar.bottom{
+    padding:4px 8px 8px;
+    border-top:1px solid var(--paper-line);
+  }
+  button.tool{
+    font-family:inherit;
+    font-size:12.5px;
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-radius:7px;
+    padding:9px 12px;
+    min-height:40px;
+    cursor:pointer;
+    color:var(--ink);
+    flex:0 0 auto;
+  }
+  button.tool:hover{border-color:var(--ink-soft);}
+  button.tool.primary{
+    background:var(--accent);
+    color:#fdf9f0;
+    border-color:var(--accent);
+  }
+  button.tool.wide{flex:1 1 auto;}
+  button.tool.quiet{background:transparent;}
+  .status{
+    font-size:11.5px;
+    color:var(--ok);
+    padding:0 6px;
+    min-width:56px;
+  }
+  .status.warn{color:var(--warn);}
+
+  details.export-panel{
+    flex:0 0 auto;
+    background:var(--panel);
+    border-top:1px solid var(--paper-line);
+  }
+  details.export-panel summary{
+    padding:8px 12px;
+    font-size:12px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .export-body{
+    padding:0 12px 12px;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .export-status{
+    font-size:11px;
+    color:var(--ink-soft);
+    width:100%;
+  }
+  textarea{
+    width:100%;
+    height:70px;
+    font-family:'SF Mono',Consolas,monospace;
+    font-size:10.5px;
+    background:#fff;
+    border:1px solid var(--paper-line);
+    border-radius:4px;
+    padding:6px;
+    color:var(--ink-soft);
+    resize:vertical;
+  }
+
+  @media (max-width:760px){
+    .menuBtn{display:block;}
+    .body-flex{position:relative;}
+    .sidebar{
+      position:fixed;
+      top:0; left:0; bottom:0;
+      z-index:20;
+      transform:translateX(-100%);
+      transition:transform .2s ease;
+      box-shadow:2px 0 10px rgba(0,0,0,.15);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-backdrop.open{
+      display:block;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.25);
+      z-index:15;
+    }
+    button.tool{font-size:12px; padding:8px 9px;}
+    .storage-note{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="menuBtn" id="menuBtn">☰</button>
+  <div class="current-char" id="currentCharLabel">अ</div>
+  <div class="progress" id="progress">0 of 0 traced</div>
+  <span class="storage-note" id="storageNote"></span>
+</div>
+
+<div class="body-flex">
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="group-label" style="margin-top:0">Vowels</div>
+    <div class="char-grid" id="grid-vowels"></div>
+    <div class="group-label">Consonants</div>
+    <div class="char-grid" id="grid-consonants"></div>
+    <div class="group-label">Matras</div>
+    <div class="char-grid" id="grid-matras"></div>
+  </div>
+
+  <div class="main">
+    <div class="control-row">
+      <div class="seg" id="modeSeg">
+        <button data-mode="points" class="active">● Tap points</button>
+        <button data-mode="freehand">✏ Draw</button>
+      </div>
+      <div class="spacer"></div>
+      <div class="zoomctl">
+        <button id="zoom1x">1×</button>
+        <button id="zoomOut">−</button>
+        <span class="zlabel" id="zoomLabel">100%</span>
+        <button id="zoomIn">+</button>
+        <button id="zoom6x">6×</button>
+      </div>
+    </div>
+    <div class="banner" id="banner">
+      Tap along the gray letter to place a dot at each spot.
+      <span class="sub">Pinch with two fingers to zoom · drag with two fingers to pan</span>
+    </div>
+
+    <div class="stage-area">
+      <div class="scroll-viewport" id="scrollViewport">
+        <div class="stage" id="stage">
+          <canvas id="guideCanvas"></canvas>
+          <canvas id="drawCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button class="tool" id="undoPointBtn">Undo point</button>
+      <button class="tool" id="finishStrokeBtn">Finish stroke</button>
+      <button class="tool" id="undoStrokeBtn">Undo stroke</button>
+      <button class="tool quiet" id="clearBtn">Clear letter</button>
+      <button class="tool quiet" id="toggleGuideBtn">Hide guide</button>
+      <span class="status" id="status"></span>
+    </div>
+    <div class="action-bar bottom">
+      <button class="tool" id="prevBtn">← Prev</button>
+      <button class="tool" id="nextBtn">Next →</button>
+      <button class="tool primary wide" id="saveBtn">Confirm &amp; save letter</button>
+    </div>
+
+    <details class="export-panel" id="exportPanel">
+      <summary>Export all traced letters</summary>
+      <div class="export-body">
+        <button class="tool" id="exportBtn">Build JSON</button>
+        <button class="tool primary" id="copyBtn">Copy JSON</button>
+        <button class="tool" id="downloadBtn">Download file</button>
+        <button class="tool" id="openTabBtn">Open in new tab</button>
+        <div class="export-status" id="exportStatus"></div>
+        <textarea id="exportBox" placeholder="Click 'Build JSON' to preview the export..." readonly></textarea>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+const VOWELS = ['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ','अं','अः'];
+const CONSONANTS = ['क','ख','ग','घ','ङ','च','छ','ज','झ','ञ','ट','ठ','ड','ढ','ण',
+  'त','थ','द','ध','न','प','फ','ब','भ','म','य','र','ल','व','श','ष','स','ह'];
+const MATRAS = ['ा','ि','ी','ु','ू','े','ै','ो','ौ','ं','ः','्'];
+const ALL = [...VOWELS, ...CONSONANTS, ...MATRAS];
+
+const INTERNAL = 1200;
+const ZOOM_MIN = 1, ZOOM_MAX = 6, ZOOM_STEP = 1.6;
+const STORAGE_KEY = 'all-traces';
+
+let currentIndex = 0;
+let strokes = [];
+let currentStroke = [];
+let mode = 'points';
+let zoom = 1;
+let panX = 0, panY = 0;
+let showGuide = true;
+let BASE = 520;
+
+let allTraces = {};
+let storageBackend = 'none'; // 'artifact' | 'local' | 'none'
+
+let drawing = false;
+let dragStartClient = null;
+let freehandStroke = null;
+
+let activePointers = new Map();
+let pinchState = null;
+
+const sidebar = document.getElementById('sidebar');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+const scrollViewport = document.getElementById('scrollViewport');
+const stage = document.getElementById('stage');
+const guideCanvas = document.getElementById('guideCanvas');
+const drawCanvas = document.getElementById('drawCanvas');
+const gctx = guideCanvas.getContext('2d');
+const dctx = drawCanvas.getContext('2d');
+const statusEl = document.getElementById('status');
+const zoomLabel = document.getElementById('zoomLabel');
+const storageNote = document.getElementById('storageNote');
+const exportStatus = document.getElementById('exportStatus');
+
+guideCanvas.width = INTERNAL; guideCanvas.height = INTERNAL;
+drawCanvas.width = INTERNAL; drawCanvas.height = INTERNAL;
+
+// ---- storage abstraction: use the artifact's persistent storage when
+// available, fall back to localStorage (e.g. if this file is opened
+// directly in Safari instead of inside Claude), so saving never silently
+// no-ops regardless of how the file is being run. ----
+async function storageGet(key){
+  if(window.storage && typeof window.storage.get === 'function'){
+    try{
+      const r = await window.storage.get(key);
+      storageBackend = 'artifact';
+      return r ? r.value : null;
+    }catch(e){
+      // key not found yet is expected on first run; fall through only
+      // if window.storage itself seems broken vs. just "no data yet"
+      storageBackend = 'artifact';
+      return null;
+    }
+  }
+  try{
+    storageBackend = 'local';
+    return window.localStorage.getItem(key);
+  }catch(e){
+    storageBackend = 'none';
+    return null;
+  }
+}
+async function storageSet(key, value){
+  if(window.storage && typeof window.storage.set === 'function'){
+    try{
+      await window.storage.set(key, value);
+      storageBackend = 'artifact';
+      return true;
+    }catch(e){
+      // fall through to localStorage as a backup
+    }
+  }
+  try{
+    window.localStorage.setItem(key, value);
+    storageBackend = 'local';
+    return true;
+  }catch(e){
+    storageBackend = 'none';
+    return false;
+  }
+}
+
+function computeBase(){
+  const rect = document.querySelector('.stage-area').getBoundingClientRect();
+  let s = Math.min(rect.width - 16, rect.height - 16);
+  s = Math.max(280, Math.min(760, s));
+  return Math.round(s);
+}
+
+function applyTransform(){
+  stage.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+  zoomLabel.textContent = Math.round(zoom * 100) + '%';
+}
+
+function applyLayout(){
+  BASE = computeBase();
+  scrollViewport.style.width = BASE + 'px';
+  scrollViewport.style.height = BASE + 'px';
+  stage.style.width = BASE + 'px';
+  stage.style.height = BASE + 'px';
+  applyTransform();
+}
+
+function resetView(){
+  zoom = 1; panX = 0; panY = 0;
+  applyTransform();
+}
+document.getElementById('zoom1x').onclick = () => { zoom = ZOOM_MIN; applyTransform(); };
+document.getElementById('zoom6x').onclick = () => { zoom = ZOOM_MAX; applyTransform(); };
+document.getElementById('zoomIn').onclick = () => { zoom = Math.min(ZOOM_MAX, zoom * ZOOM_STEP); applyTransform(); };
+document.getElementById('zoomOut').onclick = () => { zoom = Math.max(ZOOM_MIN, zoom / ZOOM_STEP); applyTransform(); };
+
+function setMode(m){
+  mode = m;
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  drawing = false;
+  freehandStroke = null;
+  const banner = document.getElementById('banner');
+  if(m === 'points'){
+    banner.innerHTML = 'Tap along the gray letter to place a dot at each spot.<span class="sub">Pinch with two fingers to zoom · drag with two fingers to pan</span>';
+  } else {
+    banner.innerHTML = 'Press and drag with one finger to draw a stroke in one motion.<span class="sub">Pinch with two fingers to zoom · drag with two fingers to pan</span>';
+  }
+}
+
+function drawGuide(char){
+  gctx.clearRect(0,0,INTERNAL,INTERNAL);
+  if(!showGuide) return;
+
+  const margin = INTERNAL * 0.06;
+  gctx.strokeStyle = '#d8d0bd';
+  gctx.lineWidth = 2;
+  gctx.beginPath();
+  gctx.moveTo(margin, INTERNAL*0.30); gctx.lineTo(INTERNAL - margin, INTERNAL*0.30);
+  gctx.moveTo(margin, INTERNAL*0.86); gctx.lineTo(INTERNAL - margin, INTERNAL*0.86);
+  gctx.stroke();
+
+  const fontFamily = "'Noto Sans Devanagari','Mangal','Nirmala UI',sans-serif";
+  gctx.textAlign = 'left';
+  gctx.textBaseline = 'alphabetic';
+  gctx.fillStyle = 'rgba(35,35,38,0.16)';
+
+  const probeSize = INTERNAL * 0.5;
+  gctx.font = probeSize + 'px ' + fontFamily;
+  let m = gctx.measureText(char);
+  let left = m.actualBoundingBoxLeft || 0;
+  let right = m.actualBoundingBoxRight || m.width || probeSize*0.5;
+  let ascent = m.actualBoundingBoxAscent || probeSize*0.75;
+  let descent = m.actualBoundingBoxDescent || probeSize*0.25;
+  let bboxW = left + right;
+  let bboxH = ascent + descent;
+  if(bboxW <= 1) bboxW = probeSize*0.6;
+  if(bboxH <= 1) bboxH = probeSize;
+
+  const maxDim = INTERNAL * 0.82;
+  const fitScale = Math.min(maxDim/bboxW, maxDim/bboxH);
+  const fontSize = probeSize * fitScale;
+
+  gctx.font = fontSize + 'px ' + fontFamily;
+  m = gctx.measureText(char);
+  left = m.actualBoundingBoxLeft || 0;
+  right = m.actualBoundingBoxRight || m.width || fontSize*0.5;
+  ascent = m.actualBoundingBoxAscent || fontSize*0.75;
+  descent = m.actualBoundingBoxDescent || fontSize*0.25;
+
+  const x0 = INTERNAL/2 - (right - left)/2;
+  const y0 = INTERNAL/2 - (descent - ascent)/2;
+  gctx.fillText(char, x0, y0);
+}
+
+function redraw(){
+  dctx.clearRect(0,0,INTERNAL,INTERNAL);
+  const palette = ['#232326','#8a2e25','#3c5a44','#3a4a7a','#7a5230'];
+  const w = INTERNAL * 0.007;
+
+  strokes.forEach((s, i) => {
+    if(s.length < 2) return;
+    dctx.strokeStyle = palette[i % palette.length];
+    dctx.lineWidth = w;
+    dctx.lineCap = 'round';
+    dctx.lineJoin = 'round';
+    dctx.beginPath();
+    dctx.moveTo(s[0][0], s[0][1]);
+    for(let p of s.slice(1)) dctx.lineTo(p[0], p[1]);
+    dctx.stroke();
+    dctx.fillStyle = palette[i % palette.length];
+    dctx.beginPath();
+    dctx.arc(s[0][0], s[0][1], w*1.5, 0, Math.PI*2);
+    dctx.fill();
+    dctx.fillStyle = '#fdf9f0';
+    dctx.font = Math.round(w*2.6) + 'px sans-serif';
+    dctx.textAlign = 'center';
+    dctx.textBaseline = 'middle';
+    dctx.fillText(String(i+1), s[0][0], s[0][1]);
+  });
+
+  if(currentStroke.length){
+    dctx.strokeStyle = 'rgba(138,46,37,0.55)';
+    dctx.lineWidth = w * 0.85;
+    dctx.lineCap = 'round';
+    dctx.lineJoin = 'round';
+    if(currentStroke.length > 1){
+      dctx.beginPath();
+      dctx.moveTo(currentStroke[0][0], currentStroke[0][1]);
+      for(let p of currentStroke.slice(1)) dctx.lineTo(p[0], p[1]);
+      dctx.stroke();
+    }
+    currentStroke.forEach((p, i) => {
+      dctx.fillStyle = i === 0 ? '#8a2e25' : '#c47e73';
+      dctx.beginPath();
+      dctx.arc(p[0], p[1], w*1.1, 0, Math.PI*2);
+      dctx.fill();
+    });
+  }
+
+  if(freehandStroke && freehandStroke.length > 1){
+    dctx.strokeStyle = '#8a2e25';
+    dctx.lineWidth = w;
+    dctx.lineCap = 'round';
+    dctx.lineJoin = 'round';
+    dctx.beginPath();
+    dctx.moveTo(freehandStroke[0][0], freehandStroke[0][1]);
+    for(let p of freehandStroke.slice(1)) dctx.lineTo(p[0], p[1]);
+    dctx.stroke();
+  }
+}
+
+function toInternal(clientX, clientY){
+  const r = drawCanvas.getBoundingClientRect();
+  const x = (clientX - r.left) / r.width * INTERNAL;
+  const y = (clientY - r.top) / r.height * INTERNAL;
+  return [Math.round(x), Math.round(y)];
+}
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+function mid(a,b){ return {x:(a.x+b.x)/2, y:(a.y+b.y)/2}; }
+
+function renderStatusHint(){
+  statusEl.textContent = currentStroke.length ? currentStroke.length + ' pt' + (currentStroke.length>1?'s':'') : '';
+}
+
+drawCanvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  drawCanvas.setPointerCapture(e.pointerId);
+  activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+  if(activePointers.size === 1){
+    dragStartClient = [e.clientX, e.clientY];
+    drawing = true;
+    if(mode === 'freehand') freehandStroke = [toInternal(e.clientX, e.clientY)];
+  } else if(activePointers.size === 2){
+    drawing = false;
+    freehandStroke = null;
+    const pts = [...activePointers.values()];
+    pinchState = {
+      startDist: dist(pts[0], pts[1]),
+      startZoom: zoom,
+      startMid: mid(pts[0], pts[1]),
+      startPan: [panX, panY]
+    };
+  }
+}, {passive:false});
+
+drawCanvas.addEventListener('pointermove', e => {
+  if(!activePointers.has(e.pointerId)) return;
+  activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  e.preventDefault();
+
+  if(activePointers.size >= 2 && pinchState){
+    const pts = [...activePointers.values()].slice(0,2);
+    const d = dist(pts[0], pts[1]);
+    const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchState.startZoom * (d / pinchState.startDist)));
+    const m = mid(pts[0], pts[1]);
+    const dx = m.x - pinchState.startMid.x;
+    const dy = m.y - pinchState.startMid.y;
+    panX = pinchState.startPan[0] + dx / newZoom;
+    panY = pinchState.startPan[1] + dy / newZoom;
+    zoom = newZoom;
+    applyTransform();
+    return;
+  }
+
+  if(activePointers.size === 1 && drawing && mode === 'freehand' && freehandStroke){
+    freehandStroke.push(toInternal(e.clientX, e.clientY));
+    redraw();
+  }
+}, {passive:false});
+
+function endPointer(e){
+  activePointers.delete(e.pointerId);
+
+  if(activePointers.size === 0){
+    if(pinchState){ pinchState = null; drawing = false; return; }
+    if(drawing){
+      drawing = false;
+      if(mode === 'points'){
+        const d = Math.hypot(e.clientX - dragStartClient[0], e.clientY - dragStartClient[1]);
+        if(d < 12){
+          currentStroke.push(toInternal(e.clientX, e.clientY));
+          redraw();
+          renderStatusHint();
+        }
+      } else if(mode === 'freehand'){
+        if(freehandStroke && freehandStroke.length > 1) strokes.push(freehandStroke);
+        freehandStroke = null;
+        redraw();
+      }
+    }
+  } else if(activePointers.size === 1 && pinchState){
+    pinchState = null;
+    const remaining = [...activePointers.values()][0];
+    dragStartClient = [remaining.x, remaining.y];
+    drawing = true;
+    if(mode === 'freehand') freehandStroke = [toInternal(remaining.x, remaining.y)];
+  }
+}
+drawCanvas.addEventListener('pointerup', e => { e.preventDefault(); endPointer(e); }, {passive:false});
+drawCanvas.addEventListener('pointercancel', e => { endPointer(e); });
+
+document.getElementById('undoPointBtn').onclick = () => { currentStroke.pop(); redraw(); renderStatusHint(); };
+document.getElementById('finishStrokeBtn').onclick = () => {
+  if(currentStroke.length >= 2){
+    strokes.push(currentStroke);
+    currentStroke = [];
+    redraw();
+    renderStatusHint();
+  } else {
+    statusEl.textContent = 'Add 2+ points';
+    setTimeout(() => { if(statusEl.textContent === 'Add 2+ points') statusEl.textContent=''; }, 1400);
+  }
+};
+document.getElementById('undoStrokeBtn').onclick = () => { strokes.pop(); redraw(); };
+document.getElementById('clearBtn').onclick = () => {
+  strokes = []; currentStroke = []; freehandStroke = null;
+  redraw(); renderStatusHint();
+};
+document.getElementById('toggleGuideBtn').onclick = (e) => {
+  showGuide = !showGuide;
+  e.target.textContent = showGuide ? 'Hide guide' : 'Show guide';
+  drawGuide(ALL[currentIndex]);
+};
+
+document.getElementById('modeSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-mode]');
+  if(btn) setMode(btn.dataset.mode);
+});
+
+function loadChar(idx){
+  currentIndex = (idx + ALL.length) % ALL.length;
+  const char = ALL[currentIndex];
+  document.getElementById('currentCharLabel').textContent = char;
+  drawGuide(char);
+  strokes = allTraces[char] ? JSON.parse(JSON.stringify(allTraces[char])) : [];
+  currentStroke = [];
+  freehandStroke = null;
+  redraw();
+  statusEl.textContent = '';
+  highlightGrid();
+  resetView();
+}
+document.getElementById('prevBtn').onclick = () => loadChar(currentIndex - 1);
+document.getElementById('nextBtn').onclick = () => loadChar(currentIndex + 1);
+
+async function loadStorage(){
+  const raw = await storageGet(STORAGE_KEY);
+  if(raw){
+    try{ allTraces = JSON.parse(raw); }catch(e){ allTraces = {}; }
+  } else {
+    allTraces = {};
+  }
+  storageNote.textContent = storageBackend === 'local' ? '(saving to this browser only)' : '';
+  updateProgress();
+  highlightGrid();
+}
+
+document.getElementById('saveBtn').onclick = async () => {
+  const char = ALL[currentIndex];
+  if(strokes.length === 0){
+    delete allTraces[char];
+  } else {
+    allTraces[char] = strokes;
+  }
+  const ok = await storageSet(STORAGE_KEY, JSON.stringify(allTraces));
+  if(ok){
+    statusEl.classList.remove('warn');
+    statusEl.textContent = 'Saved ✓';
+  } else {
+    statusEl.classList.add('warn');
+    statusEl.textContent = 'Not saved — use Download';
+  }
+  storageNote.textContent = storageBackend === 'local' ? '(saving to this browser only)' : '';
+  updateProgress();
+  highlightGrid();
+};
+
+function buildGrid(containerId, chars){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  chars.forEach(c => {
+    const btn = document.createElement('div');
+    btn.className = 'char-btn';
+    btn.textContent = c;
+    btn.onclick = () => { loadChar(ALL.indexOf(c)); closeSidebar(); };
+    el.appendChild(btn);
+  });
+}
+buildGrid('grid-vowels', VOWELS);
+buildGrid('grid-consonants', CONSONANTS);
+buildGrid('grid-matras', MATRAS);
+
+function highlightGrid(){
+  document.querySelectorAll('.char-btn').forEach(btn => {
+    const c = btn.textContent;
+    btn.classList.toggle('active', c === ALL[currentIndex]);
+    btn.classList.toggle('done', !!allTraces[c]);
+  });
+}
+function updateProgress(){
+  const n = Object.keys(allTraces).length;
+  document.getElementById('progress').textContent = `${n} of ${ALL.length} traced`;
+}
+
+document.getElementById('exportBtn').onclick = () => {
+  const n = Object.keys(allTraces).length;
+  if(n === 0){
+    document.getElementById('exportBox').value = '';
+    exportStatus.textContent = 'Nothing saved yet — trace a letter, then tap "Confirm & save letter" first.';
+  } else {
+    document.getElementById('exportBox').value = JSON.stringify(allTraces, null, 2);
+    exportStatus.textContent = 'Built — ' + n + ' letter' + (n>1?'s':'') + ' included.';
+  }
+};
+document.getElementById('copyBtn').onclick = async () => {
+  const n = Object.keys(allTraces).length;
+  if(n === 0){
+    exportStatus.textContent = 'Nothing saved yet — trace a letter, then tap "Confirm & save letter" first.';
+    return;
+  }
+  const json = JSON.stringify(allTraces, null, 2);
+  try{
+    await navigator.clipboard.writeText(json);
+    exportStatus.textContent = 'Copied ✓ — ' + n + ' letter' + (n>1?'s':'') + '. Paste it into Notes, Files, or wherever you need it.';
+  }catch(e){
+    document.getElementById('exportBox').value = json;
+    const box = document.getElementById('exportBox');
+    box.focus(); box.select();
+    exportStatus.textContent = 'Could not auto-copy — text is selected below, use Copy manually.';
+  }
+};
+
+document.getElementById('downloadBtn').onclick = () => {
+  const n = Object.keys(allTraces).length;
+  if(n === 0){
+    exportStatus.textContent = 'Nothing saved yet — trace a letter, then tap "Confirm & save letter" first.';
+    return;
+  }
+  const json = JSON.stringify(allTraces, null, 2);
+  try{
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'devanagari-stroke-traces.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    exportStatus.textContent = 'Download attempted — ' + n + ' letter' + (n>1?'s':'') + '. If nothing appeared, use Copy JSON or Open in new tab instead.';
+  }catch(e){
+    exportStatus.textContent = 'Download blocked here — use Copy JSON or Open in new tab instead.';
+  }
+};
+
+document.getElementById('openTabBtn').onclick = () => {
+  const n = Object.keys(allTraces).length;
+  if(n === 0){
+    exportStatus.textContent = 'Nothing saved yet — trace a letter, then tap "Confirm & save letter" first.';
+    return;
+  }
+  const json = JSON.stringify(allTraces, null, 2);
+  const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+  const w = window.open(dataUrl, '_blank');
+  if(!w){
+    exportStatus.textContent = 'Pop-up blocked — use Copy JSON instead.';
+  } else {
+    exportStatus.textContent = 'Opened in a new tab — use Safari\'s Share button there to save it.';
+  }
+};
+
+function openSidebar(){ sidebar.classList.add('open'); sidebarBackdrop.classList.add('open'); }
+function closeSidebar(){ sidebar.classList.remove('open'); sidebarBackdrop.classList.remove('open'); }
+document.getElementById('menuBtn').onclick = openSidebar;
+sidebarBackdrop.onclick = closeSidebar;
+
+window.addEventListener('resize', applyLayout);
+
+setMode('points');
+applyLayout();
+
+(async () => {
+  await loadStorage();
+  loadChar(0);
+})();
+</script>
+</body>
+</html>
