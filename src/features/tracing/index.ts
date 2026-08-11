@@ -4,3 +4,5 @@ export { MultiStrokeTracingCanvas } from './MultiStrokeTracingCanvas';
 export type { MultiStrokeTracingCanvasProps } from './MultiStrokeTracingCanvas';
 export { RewardOverlay } from './RewardOverlay';
 export type { RewardOverlayProps } from './RewardOverlay';
+export { TracingScreen } from './TracingScreen';
+export type { TracingScreenProps } from './TracingScreen';

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GestureResponderEvent, PanResponder, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Point, scoreTrace, StencilPath, TraceScoreResult } from '../../engine';
+import { Colors } from '../../shared/theme';
 
 import { pointsToSvgPath } from './svgPath';
 
@@ -22,6 +23,8 @@ export interface TracingCanvasProps {
   completedStrokes?: Point[][];
   /** Other strokes of a multi-stroke character not active yet, rendered as faint guides. */
   otherStencilGuides?: StencilPath[];
+  /** Color of the child's drawn line and completed strokes. */
+  traceColor?: string;
 }
 
 const DEFAULT_VIEW_BOX_SIZE = 300;
@@ -40,6 +43,7 @@ export function TracingCanvas({
   onComplete,
   completedStrokes = [],
   otherStencilGuides = [],
+  traceColor = '#3478f6',
 }: TracingCanvasProps) {
   const strokePoints = useRef<Point[]>([]);
 
@@ -114,7 +118,7 @@ export function TracingCanvas({
           <Path
             key={`completed-${i}`}
             d={pointsToSvgPath(strokePointsForPath)}
-            stroke="#3478f6"
+            stroke={traceColor}
             strokeWidth={traceStrokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -124,12 +128,15 @@ export function TracingCanvas({
         {tracedPoints.length > 0 && (
           <Path
             d={pointsToSvgPath(tracedPoints)}
-            stroke="#3478f6"
+            stroke={traceColor}
             strokeWidth={traceStrokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
             fill="none"
           />
+        )}
+        {tracedPoints.length === 0 && stencil.length > 0 && (
+          <Circle cx={stencil[0].x} cy={stencil[0].y} r={viewBoxSize * 0.025} fill={Colors.numbers} />
         )}
       </Svg>
     </View>

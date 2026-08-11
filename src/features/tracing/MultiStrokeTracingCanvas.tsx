@@ -12,6 +12,10 @@ export interface MultiStrokeTracingCanvasProps {
   size: number;
   /** Called once, after the last stroke's finger/Pencil lift, with the combined score. */
   onComplete: (result: MultiStrokeScoreResult) => void;
+  /** Color of the child's drawn line and completed strokes. */
+  traceColor?: string;
+  /** Notified whenever the active stroke changes, for progress UI outside the canvas. */
+  onStrokeIndexChange?: (index: number, total: number) => void;
 }
 
 /**
@@ -30,10 +34,17 @@ export function MultiStrokeTracingCanvas({
   viewBoxSize,
   size,
   onComplete,
+  traceColor,
+  onStrokeIndexChange,
 }: MultiStrokeTracingCanvasProps) {
   const [strokeIndex, setStrokeIndex] = useState(0);
   const [completedStrokes, setCompletedStrokes] = useState<Point[][]>([]);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
+
+  useEffect(() => {
+    onStrokeIndexChange?.(strokeIndex, strokes.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strokeIndex, strokes.length]);
 
   // TracingCanvas's onComplete prop only reflects our latest closure once a passive effect has
   // flushed — and effects run asynchronously, so they aren't guaranteed to have run between two
@@ -84,6 +95,7 @@ export function MultiStrokeTracingCanvas({
       onComplete={handleStrokeComplete}
       completedStrokes={completedStrokes}
       otherStencilGuides={otherStencilGuides}
+      traceColor={traceColor}
     />
   );
 }
