@@ -27,6 +27,8 @@ export default function RootLayout() {
         <Stack.Screen name="english" options={{ title: SCRIPT_LABELS.english }} />
         <Stack.Screen name="hindi" options={{ title: SCRIPT_LABELS.hindi }} />
         <Stack.Screen name="number" options={{ title: SCRIPT_LABELS.number }} />
+        <Stack.Screen name="parental-gate" options={{ title: 'Grown-ups Only' }} />
+        <Stack.Screen name="paywall" options={{ title: 'Unlock' }} />
       </Stack>
       <StatusBar style="auto" />
     </>

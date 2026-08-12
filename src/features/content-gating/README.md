@@ -12,6 +12,9 @@ Determines which content (characters/numbers) is accessible based on free/paid t
 The actual free/paid split per character lives in `src/content/tiers.ts`, not here — this feature
 only enforces whatever that file decides, so the split can change without touching gating logic.
 
-`CategoryGridScreen` is the only current consumer: locked tiles don't navigate to the tracer and
-instead show a dismissible inline banner. There's no paywall/purchase screen yet — that (plus the
-parental gate required to reach it) is separate, not-yet-built work.
+`CategoryGridScreen` is the only current consumer of `isCharacterAccessible`: locked tiles don't
+navigate to the tracer, they navigate to `/parental-gate`
+(`src/features/parental-gate/`) instead. Passing that gate routes to `PaywallScreen.tsx` here — a
+teaser only ("Unlock the full pack", live paid-character count from `allCharacters`), since actual
+purchasing isn't wired up: the button is inert ("Coming soon"). That's still separate, not-yet-built
+work — `unlockPaidContent()` in `entitlementService.ts` is the seam for it, unused until then.
