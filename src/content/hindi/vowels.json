@@ -6,7 +6,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "अ",
-      "tier": "free",
       "strokes": [
         [
           {
@@ -122,7 +121,7 @@
             "y": 156.08
           },
           {
-            "x": 45.0,
+            "x": 45,
             "y": 148.71
           }
         ],
@@ -240,7 +239,7 @@
             "y": 70.64
           },
           {
-            "x": 207.0,
+            "x": 207,
             "y": 70.64
           },
           {
@@ -256,7 +255,7 @@
             "y": 74.92
           },
           {
-            "x": 255.0,
+            "x": 255,
             "y": 81.67
           }
         ]
@@ -268,7 +267,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "आ",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -288,7 +286,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "इ",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -308,7 +305,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "ई",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -328,7 +324,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "उ",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -348,7 +343,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "ऊ",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -368,7 +362,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "ऋ",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -388,7 +381,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "ए",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -408,7 +400,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "ऐ",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -428,7 +419,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "ओ",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -448,7 +438,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "औ",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -468,7 +457,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "अं",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [
@@ -488,7 +476,6 @@
       "script": "hindi",
       "category": "vowel",
       "displayLabel": "अः",
-      "tier": "free",
       "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-vowels-strokes.json / devanagari-consonants-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
       "strokes": [
         [

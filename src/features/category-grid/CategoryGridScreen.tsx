@@ -6,6 +6,8 @@ import { Category, CharacterContent, getCharactersByScript, Script } from '../..
 import { CATEGORY_LABELS, CATEGORY_ORDER, SCRIPT_TAGLINES } from '../../shared/categories';
 import { fontFamilyForScript } from '../../shared/fonts';
 import { CategoryColors, Colors, getCategoryColors } from '../../shared/theme';
+import { isCharacterAccessible } from '../content-gating/access';
+import { hasUnlockedPaidContent as getHasUnlockedPaidContent } from '../content-gating/entitlementService';
 import { getCompletedCharacterIds } from '../progress/progressService';
 
 export interface CategoryGridScreenProps {
@@ -30,23 +32,31 @@ function groupByCategory(characters: CharacterContent[]): CategoryGroup[] {
   }));
 }
 
+const LOCKED_MESSAGE = 'This one is part of the full VarnaTrace pack — unlocking is coming soon!';
+
 function Tile({
   character,
   colors,
   completed,
+  locked,
+  onLockedPress,
 }: {
   character: CharacterContent;
   colors: CategoryColors;
   completed: boolean;
+  locked: boolean;
+  onLockedPress: () => void;
 }) {
-  const locked = character.tier === 'paid';
-
   return (
     <Pressable
       style={[styles.tile, { backgroundColor: colors.soft }]}
-      onPress={() =>
-        router.push({ pathname: '/trace/[characterId]', params: { characterId: character.id } })
-      }
+      onPress={() => {
+        if (locked) {
+          onLockedPress();
+          return;
+        }
+        router.push({ pathname: '/trace/[characterId]', params: { characterId: character.id } });
+      }}
     >
       <Text
         style={[
@@ -77,6 +87,8 @@ export function CategoryGridScreen({ script }: CategoryGridScreenProps) {
   const showSectionLabels = groups.length > 1;
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [unlocked, setUnlocked] = useState(false);
+  const [showLockedMessage, setShowLockedMessage] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -84,6 +96,11 @@ export function CategoryGridScreen({ script }: CategoryGridScreenProps) {
       getCompletedCharacterIds().then((ids) => {
         if (!cancelled) {
           setCompletedIds(new Set(ids));
+        }
+      });
+      getHasUnlockedPaidContent().then((value) => {
+        if (!cancelled) {
+          setUnlocked(value);
         }
       });
       return () => {
@@ -95,6 +112,13 @@ export function CategoryGridScreen({ script }: CategoryGridScreenProps) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.tagline}>{SCRIPT_TAGLINES[script]}</Text>
+
+      {showLockedMessage && (
+        <Pressable style={styles.lockedBanner} onPress={() => setShowLockedMessage(false)}>
+          <Text style={styles.lockedBannerText}>{LOCKED_MESSAGE}</Text>
+          <Text style={styles.lockedBannerDismiss}>✕</Text>
+        </Pressable>
+      )}
 
       {groups.map((group) => (
         <View key={group.category}>
@@ -110,6 +134,8 @@ export function CategoryGridScreen({ script }: CategoryGridScreenProps) {
                 character={character}
                 colors={colors}
                 completed={completedIds.has(character.id)}
+                locked={!isCharacterAccessible(character, unlocked)}
+                onLockedPress={() => setShowLockedMessage(true)}
               />
             ))}
           </View>
@@ -135,6 +161,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.neutralMuted,
     marginBottom: 8,
+  },
+  lockedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.neutralBg,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    gap: 12,
+  },
+  lockedBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.paper,
+  },
+  lockedBannerDismiss: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.paper,
   },
   sectionLabel: {
     fontSize: 12,

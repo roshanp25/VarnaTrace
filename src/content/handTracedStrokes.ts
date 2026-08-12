@@ -3,7 +3,7 @@ import handTracedConsonants from '../../assets/data/devanagari-consonants-stroke
 import handTracedVowels from '../../assets/data/devanagari-vowels-strokes.json';
 import { StencilPath } from '../engine';
 
-import { CharacterContent } from './types';
+import { RawCharacterContent } from './types';
 
 /**
  * Canvas size the hand-tracing tool (tools/stroke-tracer.html) authors points in — its `INTERNAL`
@@ -51,11 +51,11 @@ export function normalizeHandTracedStroke(
  * non-empty entry exists. Characters without an entry are returned unchanged, so these files can
  * be filled in incrementally.
  */
-export function applyHandTracedStrokes(
-  characters: CharacterContent[],
+export function applyHandTracedStrokes<T extends RawCharacterContent>(
+  characters: T[],
   viewBoxSize: number,
   raw: HandTracedStrokeData = handTracedStrokesRaw as HandTracedStrokeData,
-): CharacterContent[] {
+): T[] {
   return characters.map((character) => {
     if (character.script !== 'hindi') {
       return character;

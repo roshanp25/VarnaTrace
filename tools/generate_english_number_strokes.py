@@ -402,12 +402,13 @@ def build_letters():
         strokes = letter_strokes(letter)
         if letter in FORCE_RECENTER:
             strokes = recenter_x(strokes)
+        # No "tier" field here — free vs paid is decided centrally in src/content/tiers.ts,
+        # not per-character in the content JSON.
         entries.append({
             "id": letter_id(letter),
             "script": "english",
             "category": "letter",
             "displayLabel": letter,
-            "tier": "paid",
             "note": NOTE,
             "strokes": strokes,
         })
@@ -429,7 +430,6 @@ def build_numbers():
             "script": "number",
             "category": "number",
             "displayLabel": str(n),
-            "tier": "paid",
             "note": NOTE,
             "strokes": strokes,
         })

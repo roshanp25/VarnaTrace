@@ -4,14 +4,13 @@ export type Script = 'english' | 'hindi' | 'number';
 export type Category = 'letter' | 'vowel' | 'consonant' | 'conjunct' | 'number';
 export type Tier = 'free' | 'paid';
 
-export interface CharacterContent {
+export interface RawCharacterContent {
   /** Stable identifier, e.g. "en-l-upper", "hi-vowel-a", "num-7". Never reused or repurposed. */
   id: string;
   script: Script;
   category: Category;
   /** The glyph shown to the child, e.g. "A", "अ", "7". */
   displayLabel: string;
-  tier: Tier;
   /** Optional flag for content that isn't production-ready yet, e.g. an unverified placeholder shape. */
   note?: string;
   /**
@@ -25,7 +24,16 @@ export interface CharacterContent {
   strokes: StencilPath[];
 }
 
+/**
+ * The content-JSON files don't carry `tier` themselves — see `src/content/tiers.ts` for why (it's
+ * the single place that decides free vs paid, so that decision can move around without touching
+ * per-script content files). `applyTiers` adds `tier` at load time to produce this final shape.
+ */
+export interface CharacterContent extends RawCharacterContent {
+  tier: Tier;
+}
+
 export interface CharacterContentFile {
   version: number;
-  characters: CharacterContent[];
+  characters: RawCharacterContent[];
 }

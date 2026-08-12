@@ -1,6 +1,6 @@
 """One-off generator for src/content/hindi/{vowels,consonants}.json entries.
 
-Creates a CharacterContent entry (id/category/tier/displayLabel) for every
+Creates a CharacterContent entry (id/category/displayLabel) for every
 character that has hand-traced data in assets/data/devanagari-*-strokes.json
 but doesn't yet have a content entry. The `strokes` field here is a trivial
 placeholder — every one of these characters has real hand-traced data, so
@@ -8,6 +8,9 @@ applyHandTracedStrokes (src/content/handTracedStrokes.ts) overrides it at
 runtime unconditionally. It only exists to satisfy the schema (>=1 stroke,
 >=2 points) as a fallback for the (currently hypothetical) case where a
 character's hand-traced entry is ever removed.
+
+Entries carry no "tier" field — free vs paid is decided centrally in
+src/content/tiers.ts, not per-character in this content JSON.
 
 Run once; re-running is safe (it only adds entries whose id doesn't already
 exist in the target file, never overwrites/duplicates).
@@ -48,19 +51,18 @@ CONSONANTS = [
 ]
 
 
-def make_entry(char, slug, category, tier):
+def make_entry(char, slug, category):
     return {
         "id": f"hi-{category}-{slug}",
         "script": "hindi",
         "category": category,
         "displayLabel": char,
-        "tier": tier,
         "note": PLACEHOLDER_NOTE,
         "strokes": [[{"x": x, "y": y} for x, y in stroke] for stroke in PLACEHOLDER_STROKES],
     }
 
 
-def add_entries(path, chars, category, tier):
+def add_entries(path, chars, category):
     if path.exists():
         data = json.loads(path.read_text(encoding="utf-8"))
     else:
@@ -69,7 +71,7 @@ def add_entries(path, chars, category, tier):
     existing_ids = {c["id"] for c in data["characters"]}
     added = []
     for char, slug in chars:
-        entry = make_entry(char, slug, category, tier)
+        entry = make_entry(char, slug, category)
         if entry["id"] in existing_ids:
             continue
         data["characters"].append(entry)
@@ -80,8 +82,8 @@ def add_entries(path, chars, category, tier):
 
 
 def main():
-    added_vowels = add_entries(VOWELS_FILE, VOWELS, "vowel", "free")
-    added_consonants = add_entries(CONSONANTS_FILE, CONSONANTS, "consonant", "paid")
+    added_vowels = add_entries(VOWELS_FILE, VOWELS, "vowel")
+    added_consonants = add_entries(CONSONANTS_FILE, CONSONANTS, "consonant")
     print(f"{VOWELS_FILE.relative_to(REPO_ROOT)}: added {len(added_vowels)} entries")
     print(f"{CONSONANTS_FILE.relative_to(REPO_ROOT)}: added {len(added_consonants)} entries")
 
