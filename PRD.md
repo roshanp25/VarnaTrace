@@ -2,7 +2,7 @@
 
 Status: **DRAFT — awaiting formal review**, but implementation has proceeded past several open
 decisions below via direct confirmation during build sessions — see Section 0.
-Last updated: 2026-08-11
+Last updated: 2026-08-12
 
 App Store listing:
 - App Name: **VarnaTrace: English & Hindi** (27 chars)
@@ -22,13 +22,22 @@ requirements source of truth, but may describe things not built yet.
 3. **Scoring engine (test-first)** — `src/engine/`: `scoreTrace.ts` (single stroke: accuracy + coverage + direction) and `scoreMultiStrokeTrace.ts` (multi-stroke; a character only "passes" if *every* stroke individually passes). Fully unit-tested, zero UI dependencies, per Section 4.
 4. **Tracing UI** — `src/features/tracing/`: `TracingCanvas.tsx` (single-stroke SVG canvas, touch + Apple Pencil via `PanResponder`), `MultiStrokeTracingCanvas.tsx` (sequences a character's strokes one at a time), `RewardOverlay.tsx`. Wired into `App.tsx`, which is currently a flat debug-style screen (character picker + canvas) — **not** the real app shell/navigation.
 5. **CI** — `.github/workflows/ci.yml` runs typecheck + lint + test on every push/PR.
-6. **Content data — Hindi is essentially done, English/numbers are placeholder-only:**
+6. **Content data — all three scripts are now complete (49/49 Hindi, 26/26 English, 50/50 numbers):**
    - Hindi vowels: **13/13** (अ आ इ ई उ ऊ ऋ ए ऐ ओ औ अं अः), real hand-traced stroke data, `tier: free`.
    - Hindi consonants: **33/33** (क–ह), real hand-traced stroke data, `tier: paid`.
-   - Hindi conjuncts (क्ष त्र ज्ञ, per Section 3.1): **not started** — no entries at all yet.
-   - English letters: **4/26** (I, L, C, T) — early scaffolding samples, not the full alphabet.
-   - Numbers: **2/50** (1, 7) — same, sample only.
+   - Hindi conjuncts: **3/3** (क्ष त्र ज्ञ), real hand-traced stroke data, `tier: paid` (matching the
+     consonants convention — not an explicit decision, worth confirming if the free/paid split
+     ever gets revisited). `assets/data/devanagari-conjuncts-strokes.json`, wired into
+     `handTracedStrokes.ts` and `content/index.ts`'s `files` array the same way vowels/consonants
+     are.
+   - English letters: **26/26** — 16 hand-traced (I L T A B D E F G H J K P Q R S) via a new
+     English-specific hand-tracing tool, 10 procedurally generated from geometric primitives
+     (C M N O U V W X Y Z, via `tools/generate_english_number_strokes.py`).
+   - Numbers: **50/50** — digits 1-9 hand-traced, two-digit numbers 10-50 composed from those
+     traced digits (digit 0, needed only as a ones-digit, falls back to a procedural ellipse
+     since it wasn't traced), single-digit numbers hand-traced directly.
    - Full detail on how the Hindi data was produced (tooling, validation, what's still manual): **`docs/devanagari-stroke-data.md`**.
+   - Full detail on the English/numbers hand-tracing + composition + size-normalization pipeline: **`docs/english-numbers-content-pipeline.md`**.
 7. **Hindi text rendering fix** — `Text` components had no explicit `fontFamily`, so Devanagari characters fell back to whatever font the OS/browser picked (inconsistent, and rendered malformed in the web preview). Fixed by bundling `@expo-google-fonts/noto-sans-devanagari` + `expo-font` and applying `NotoSansDevanagari_400Regular` specifically where `character.script === 'hindi'` (English/numbers keep the platform default). Verified in-browser: the font loads (`status: "loaded"`), applies only to Hindi text nodes. **Any new UI that renders Hindi character text needs this same treatment** — don't assume default `Text` styling handles Devanagari.
 8. **Real app shell/navigation** — `App.tsx`/`index.ts` are gone; the app now runs on **Expo Router** (`"main": "expo-router/entry"` in `package.json`, `app/` directory, `scheme: "varnatrace"` + `typedRoutes` in `app.json`). Root layout `app/_layout.tsx` loads the Devanagari font once and renders a native-stack `Stack`. Routes: `/` (Home), `/english` `/hindi` `/number` (category grids), `/trace/[characterId]` (single-character tracing).
 9. **Design system** — `src/shared/theme.ts` (`Colors` + `getCategoryColors(script)`, three category colors each with `fill`/`soft`/`ink` roles — `ink` exists specifically because a single mid-tone color used as both a soft background and its own text color measures under WCAG AA contrast, verified during this pass) and `src/shared/categories.ts` (`SCRIPT_LABELS`, `SCRIPT_TAGLINES`, `CATEGORY_LABELS`, `CATEGORY_ORDER`) are the single source of truth for script/category display copy and color — new screens should consume these, not hardcode strings/colors.
@@ -37,28 +46,48 @@ requirements source of truth, but may describe things not built yet.
 12. **Category grid screen** (`src/features/category-grid/CategoryGridScreen.tsx`) — replaces the old flat picker. Groups characters by `category` (vowel/consonant/etc.), only showing section headers when a script actually has more than one category present (Hindi does; English/Numbers currently don't, so they render as a flat grid with no special-casing needed). Shows a checkmark badge for completed characters and a **lock badge for `tier: 'paid'` characters — informational only, tiles stay fully tappable**, since gating enforcement (item below) isn't built yet.
 13. **Tracing screen redesign** (`src/features/tracing/TracingScreen.tsx`) — single-character screen (character selection now lives entirely in the grid). Canvas sits on a category-tinted circular backdrop, the drawn line uses the category accent color instead of a hardcoded blue, a green start-point dot marks where each stroke begins (hidden once the child starts drawing), and multi-stroke characters show a row of progress dots. **Every one of the 46 real hand-traced Hindi characters is multi-stroke (3–8 strokes)** — this isn't a hypothetical case. `TracingCanvas`/`MultiStrokeTracingCanvas` gained `traceColor` and `onStrokeIndexChange` props to support this; the scoring engine itself is untouched.
 14. **Reward screen redesign** (`src/features/tracing/RewardOverlay.tsx`) — varied encouragement copy (a small pool per pass/fail, re-picked each completion) instead of two fixed strings; the raw numeric score is no longer shown to the child (only stars); "Trace Again" (retry) and "Next Letter →" (advances to the next character in the script's list, `router.replace` so the back stack always returns to the grid regardless of how many "next" taps happened; falls back to the grid if there's no next character) replace tap-anywhere-to-dismiss.
+15. **Content completion + size normalization (2026-08-12 session)** — English/numbers content
+    filled out to 26/26 and 50/50 (see item 6), plus a normalization pass
+    (`tools/normalize_sizes.py`) run over every letter and number so they're visually consistent:
+    every character's own ink bounding box is uniformly scaled (shape-preserving, no stretching)
+    to the same height and centered on its block's midpoint. Two-digit numbers are laid out by
+    packing both digits with a fixed gap between their actual ink and centering the pair, rather
+    than centering each digit independently in a fixed half-box — the latter made narrow tens
+    digits (e.g. "1" in 11-19) look far apart and wide ones collide, since the visual gap
+    depended on each digit's own width instead of being controlled directly. A couple of
+    digit-specific optical corrections (digit 2's width and a top-anchored base-height reduction)
+    are also baked in — see `docs/english-numbers-content-pipeline.md` for the full reasoning,
+    including two rejected approaches (an independent-half-box layout, and a uniform vertical
+    shift for digit 2) kept there so they aren't retried from scratch.
+16. **Tracing screen additions** — faint crosshair grid lines through canvas center in
+    `TracingCanvas.tsx` (helps visually verify centering, both for content QA and potentially for
+    kids); a skip button (→, next to Clear) on `TracingScreen.tsx` that advances to the next
+    character without requiring the current trace to be completed first, reusing the same
+    "advance" logic `RewardOverlay`'s "Next Letter" button already had.
 
-**Verified working state as of last check:** typecheck clean, lint clean, 300 tests passing across 7 suites (includes per-character hand-traced-data validation tests plus new `progressService` tests). Manually walked through in-browser: Home → category grid → tracing → reward → next-letter, including the multi-stroke sequence and the end-of-list fallback. A good baseline to build on from a fresh session.
+**Verified working state as of last check:** typecheck clean, lint clean, 665 tests passing across 7 suites (includes per-character hand-traced-data validation tests plus `progressService` tests). Manually walked through in-browser: Home → category grid → tracing → reward → next-letter, including the multi-stroke sequence and the end-of-list fallback, plus the new skip button and grid lines. A good baseline to build on from a fresh session.
 
 ### Not started
-- **Free/paid content gating enforcement (Section 3.6 / build step 6)** — the data model (`tier: 'free'|'paid'`, `getFreeCharacters()` in `src/content/index.ts`) and the **visual** lock badge (item 12 above) both exist now, but nothing actually blocks access — every tile, locked or not, still opens the tracer. `src/features/content-gating/` is still just a placeholder README.
+- **Free/paid content gating enforcement (Section 3.6 / build step 6)** — the data model (`tier: 'free'|'paid'`, `getFreeCharacters()` in `src/content/index.ts`) and the **visual** lock badge (item 12 above) both exist now, but nothing actually blocks access — every tile, locked or not, still opens the tracer. `src/features/content-gating/` is still just a placeholder README. Content is now fully authored (item 6), so this is the natural next step.
 - **Parental gate** — not started. `src/features/parental-gate/` is currently just a placeholder README. The reward screen's "Next Letter" flow and the grid's lock badges were both built with this in mind (see the UX session notes below) but don't call into anything yet.
 - **IAP / purchase flow** — not started (blocked on the two items above).
 - **Audio** (reward sounds) — not started.
-- **Hindi conjuncts, full English alphabet, full 1–50 numbers** — content authoring not started for these (see above).
 - **App icon/splash artwork, a bundled display font** — the UX redesign (see below) intentionally scoped these out; still using default Expo icon assets and system fonts at bold weights as a placeholder for the mockup's rounded display face.
 
 ### UX redesign session (2026-08-11)
 A separate pass audited the pre-redesign flat `App.tsx` screen against professional UX standards, produced five mockup screens (Home, category grid, tracing, reward, paywall teaser — not persisted in-repo, they were review artifacts), and implemented four of them one at a time as Steps 1–4 above (items 8–14). **Step 5 — real content-gating enforcement + the paywall teaser + parental gate — is intentionally not built yet**; it's the same work already listed as "Not started" above, now with the visual groundwork (lock badges, category colors, the reward screen's flow) in place to build it against. Pick up there next.
 
 ### Deviations from this document worth knowing about
-- **Section 3.6's free/paid split** described "a curated mix" (a few vowels + a few consonants + numbers 1–10), deliberately *not* split along script/category lines, so the free tier would show quality across both scripts. **What actually shipped in the data is a straight category split: all 13 vowels free, all 33 consonants paid.** Decided directly with the user during the 2026-08-11 content session — simpler to reason about, but a real change from the original plan. If/when the gating screen gets built, use this actual split unless told otherwise; update this doc if it changes again.
-- **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html`, an HTML page with no build step) that the user runs themselves — served locally (`npx serve tools`) and used from an iPhone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. An earlier attempt used auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`); the hand-tracing tool superseded it for actual content production. See `docs/devanagari-stroke-data.md` for why and how.
+- **Section 3.6's free/paid split** described "a curated mix" (a few vowels + a few consonants + numbers 1–10), deliberately *not* split along script/category lines, so the free tier would show quality across both scripts. **What actually shipped in the data is a straight category split: all 13 vowels free, all 33 consonants paid.** Decided directly with the user during the 2026-08-11 content session — simpler to reason about, but a real change from the original plan. Hindi conjuncts (added 2026-08-12) followed the consonants convention (`tier: paid`) by default, not an explicit decision. **English letters and numbers are currently ALL `tier: paid` except `en-i-upper` (displayLabel "I") and `num-1`** (carried over from the original scaffolding samples — verified directly against the JSON, not assumed) — this was never discussed with the user and is very likely wrong once gating actually gets built; flag it explicitly rather than assuming it's intentional. If/when the gating screen gets built, use the Hindi split as-is, but get real direction on English/numbers first; update this doc once that's settled.
+- **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html` for Hindi, `tools/stroke-tracer-english.html` for English letters — same tool, different character list/font) that the user runs themselves — served locally (`npx serve tools` or `python -m http.server`) and used from a phone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. Two secondary approaches were tried and superseded for specific cases: auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`, used for one Hindi vowel's fallback base only) and procedural geometry generation (`tools/generate_english_number_strokes.py`, still actually in use for 10 of the 26 English letters — see item 6 above — after hand-tracing repeatedly out-performed it on proportion/centering issues that took several review rounds to pin down). See `docs/devanagari-stroke-data.md` and `docs/english-numbers-content-pipeline.md` for why and how.
 
 ### Where to look next
-- `docs/devanagari-stroke-data.md` — the Hindi stroke-data pipeline in full: the hand-tracing tool workflow, the validation/repair tooling, data provenance, and exactly how to add the missing conjuncts.
-- `tools/devanagari/` — Python tooling: `validate_hand_traces.py` (checks hand-traced data for the "forgot to click Finish Stroke" bug pattern), `repair_hand_traces.py` (heuristic auto-split + debug visualization, requires visual approval before use), `generate_content_entries.py` (adds `CharacterContent` entries for characters that have trace data but no id/tier yet), `import_stroke_order.py`/`svg_path.py`/`geometry.py` (the earlier, now-secondary Wikimedia SVG pipeline).
-- `src/content/handTracedStrokes.ts` — where hand-traced data (`assets/data/devanagari-{vowels,consonants}-strokes.json`) gets merged over the base content JSON at runtime.
+- **Content gating enforcement** is the natural next build step now that all content is authored — see "Not started" above.
+- `docs/devanagari-stroke-data.md` — the Hindi stroke-data pipeline in full: the hand-tracing tool workflow, the validation/repair tooling, data provenance, and (now done) how the conjuncts were added.
+- `docs/english-numbers-content-pipeline.md` — the English/numbers pipeline: the hand-tracing tool, the two import scripts, and the size-normalization pass, including the reasoning behind several rejected approaches (worth reading before touching `tools/normalize_sizes.py`, so a fix already tried and reverted doesn't get retried).
+- `tools/devanagari/` — Python tooling: `validate_hand_traces.py` (checks hand-traced data for the "forgot to click Finish Stroke" bug pattern, now also covers `devanagari-conjuncts-strokes.json`), `repair_hand_traces.py` (heuristic auto-split + debug visualization, requires visual approval before use), `generate_content_entries.py` (adds `CharacterContent` entries for characters that have trace data but no id/tier yet), `import_stroke_order.py`/`svg_path.py`/`geometry.py` (the earlier, now-secondary Wikimedia SVG pipeline).
+- `tools/stroke-tracer-english.html` / `import_english_traces.py` / `import_traced_numbers.py` / `normalize_sizes.py` — the English/numbers equivalent of the Devanagari pipeline above.
+- `src/content/handTracedStrokes.ts` — where hand-traced data (`assets/data/devanagari-{vowels,consonants,conjuncts}-strokes.json`) gets merged over the base content JSON at runtime. English/numbers don't use this runtime-merge pattern — their hand-traced data is baked directly into `letters.json`/`numbers.json` by the import scripts instead, since (unlike Hindi) there's no separate "base content with placeholder fallback" layer for them.
 
 ---
 
