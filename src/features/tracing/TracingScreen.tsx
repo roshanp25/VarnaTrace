@@ -103,9 +103,14 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
         />
       </View>
 
-      <Pressable style={styles.clearButton} onPress={reset} accessibilityLabel="Clear">
-        <Text style={styles.clearButtonIcon}>↺</Text>
-      </Pressable>
+      <View style={styles.controlRow}>
+        <Pressable style={styles.clearButton} onPress={reset} accessibilityLabel="Clear">
+          <Text style={styles.clearButtonIcon}>↺</Text>
+        </Pressable>
+        <Pressable style={styles.clearButton} onPress={handleNext} accessibilityLabel="Skip to next character">
+          <Text style={styles.clearButtonIcon}>→</Text>
+        </Pressable>
+      </View>
 
       {result && (
         <RewardOverlay
@@ -146,8 +151,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  clearButton: {
+  controlRow: {
+    flexDirection: 'row',
+    gap: 16,
     marginTop: 24,
+  },
+  clearButton: {
     width: 44,
     height: 44,
     borderRadius: 22,

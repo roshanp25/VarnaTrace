@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "hi-conjunct-ksha",
+      "script": "hindi",
+      "category": "conjunct",
+      "displayLabel": "क्ष",
+      "tier": "paid",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-conjuncts-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          { "x": 50, "y": 50 },
+          { "x": 250, "y": 250 }
+        ]
+      ]
+    },
+    {
+      "id": "hi-conjunct-tra",
+      "script": "hindi",
+      "category": "conjunct",
+      "displayLabel": "त्र",
+      "tier": "paid",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-conjuncts-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          { "x": 50, "y": 50 },
+          { "x": 250, "y": 250 }
+        ]
+      ]
+    },
+    {
+      "id": "hi-conjunct-gya",
+      "script": "hindi",
+      "category": "conjunct",
+      "displayLabel": "ज्ञ",
+      "tier": "paid",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-conjuncts-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          { "x": 50, "y": 50 },
+          { "x": 250, "y": 250 }
+        ]
+      ]
+    }
+  ]
+}

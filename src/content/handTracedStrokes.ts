@@ -1,3 +1,4 @@
+import handTracedConjuncts from '../../assets/data/devanagari-conjuncts-strokes.json';
 import handTracedConsonants from '../../assets/data/devanagari-consonants-strokes.json';
 import handTracedVowels from '../../assets/data/devanagari-vowels-strokes.json';
 import { StencilPath } from '../engine';
@@ -24,6 +25,7 @@ export type HandTracedStrokeData = Record<string, [number, number][][]>;
 const handTracedStrokesRaw: HandTracedStrokeData = {
   ...(handTracedVowels as unknown as HandTracedStrokeData),
   ...(handTracedConsonants as unknown as HandTracedStrokeData),
+  ...(handTracedConjuncts as unknown as HandTracedStrokeData),
 };
 
 /**
@@ -65,7 +67,7 @@ export function applyHandTracedStrokes(
     return {
       ...character,
       strokes: handTraced.map((stroke) => normalizeHandTracedStroke(stroke, viewBoxSize)),
-      note: 'Hand-traced via tools/stroke-tracer.html; source data in assets/data/devanagari-vowels-strokes.json and devanagari-consonants-strokes.json.',
+      note: 'Hand-traced via tools/stroke-tracer.html; source data in assets/data/devanagari-vowels-strokes.json, devanagari-consonants-strokes.json, and devanagari-conjuncts-strokes.json.',
     };
   });
 }

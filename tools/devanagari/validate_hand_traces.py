@@ -99,6 +99,7 @@ def main():
     files = {
         "vowels": DATA_DIR / "devanagari-vowels-strokes.json",
         "consonants": DATA_DIR / "devanagari-consonants-strokes.json",
+        "conjuncts": DATA_DIR / "devanagari-conjuncts-strokes.json",
     }
 
     total = 0

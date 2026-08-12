@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GestureResponderEvent, PanResponder, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { Point, scoreTrace, StencilPath, TraceScoreResult } from '../../engine';
 import { Colors } from '../../shared/theme';
@@ -92,6 +92,24 @@ export function TracingCanvas({
   return (
     <View style={{ width: size, height: size }} {...panResponder.panHandlers}>
       <Svg width={size} height={size} viewBox={viewBox}>
+        <Line
+          x1={viewBoxSize / 2}
+          y1={0}
+          x2={viewBoxSize / 2}
+          y2={viewBoxSize}
+          stroke="#000000"
+          strokeOpacity={0.08}
+          strokeWidth={viewBoxSize * 0.004}
+        />
+        <Line
+          x1={0}
+          y1={viewBoxSize / 2}
+          x2={viewBoxSize}
+          y2={viewBoxSize / 2}
+          stroke="#000000"
+          strokeOpacity={0.08}
+          strokeWidth={viewBoxSize * 0.004}
+        />
         {otherStencilGuides.map((guide, i) => (
           <Path
             key={`other-guide-${i}`}

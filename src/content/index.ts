@@ -1,11 +1,18 @@
 import englishLetters from './english/letters.json';
 import { applyHandTracedStrokes } from './handTracedStrokes';
+import hindiConjuncts from './hindi/conjuncts.json';
 import hindiConsonants from './hindi/consonants.json';
 import hindiVowels from './hindi/vowels.json';
 import numbers from './numbers/numbers.json';
 import { CharacterContent, CharacterContentFile } from './types';
 
-const files = [englishLetters, hindiVowels, hindiConsonants, numbers] as CharacterContentFile[];
+const files = [
+  englishLetters,
+  hindiVowels,
+  hindiConsonants,
+  hindiConjuncts,
+  numbers,
+] as CharacterContentFile[];
 
 /** Must match TracingCanvas's own DEFAULT_VIEW_BOX_SIZE — content is authored in this space. */
 const VIEW_BOX_SIZE = 300;
