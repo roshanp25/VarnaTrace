@@ -18,12 +18,12 @@ function character(tier: CharacterContent['tier']): CharacterContent {
 }
 
 describe('isCharacterAccessible', () => {
-  it('is always accessible when free, regardless of unlock state', () => {
+  it('is always accessible when free, regardless of subscription state', () => {
     expect(isCharacterAccessible(character('free'), false)).toBe(true);
     expect(isCharacterAccessible(character('free'), true)).toBe(true);
   });
 
-  it('is only accessible when paid and content has been unlocked', () => {
+  it('is only accessible when paid and the subscription is active', () => {
     expect(isCharacterAccessible(character('paid'), false)).toBe(false);
     expect(isCharacterAccessible(character('paid'), true)).toBe(true);
   });

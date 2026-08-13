@@ -1,9 +1,6 @@
 import { CharacterContent } from '../../content';
 
-/** A free character is always accessible; a paid one only once paid content has been unlocked. */
-export function isCharacterAccessible(
-  character: CharacterContent,
-  hasUnlockedPaidContent: boolean,
-): boolean {
-  return character.tier === 'free' || hasUnlockedPaidContent;
+/** A free character is always accessible; a paid one only while the subscription is active. */
+export function isCharacterAccessible(character: CharacterContent, isSubscribed: boolean): boolean {
+  return character.tier === 'free' || isSubscribed;
 }

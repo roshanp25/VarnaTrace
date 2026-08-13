@@ -3,11 +3,11 @@ import { router, useFocusEffect } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Category, CharacterContent, getCharactersByScript, Script } from '../../content';
+import { subscriptionService } from '../../services/subscription';
 import { CATEGORY_LABELS, CATEGORY_ORDER, SCRIPT_TAGLINES } from '../../shared/categories';
 import { fontFamilyForScript } from '../../shared/fonts';
 import { CategoryColors, Colors, getCategoryColors } from '../../shared/theme';
 import { isCharacterAccessible } from '../content-gating/access';
-import { hasUnlockedPaidContent as getHasUnlockedPaidContent } from '../content-gating/entitlementService';
 import { getCompletedCharacterIds } from '../progress/progressService';
 
 export interface CategoryGridScreenProps {
@@ -83,7 +83,7 @@ export function CategoryGridScreen({ script }: CategoryGridScreenProps) {
   const showSectionLabels = groups.length > 1;
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [unlocked, setUnlocked] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -93,9 +93,9 @@ export function CategoryGridScreen({ script }: CategoryGridScreenProps) {
           setCompletedIds(new Set(ids));
         }
       });
-      getHasUnlockedPaidContent().then((value) => {
+      subscriptionService.getEntitlementStatus().then((status) => {
         if (!cancelled) {
-          setUnlocked(value);
+          setIsSubscribed(status.isActive);
         }
       });
       return () => {
@@ -122,7 +122,7 @@ export function CategoryGridScreen({ script }: CategoryGridScreenProps) {
                 character={character}
                 colors={colors}
                 completed={completedIds.has(character.id)}
-                locked={!isCharacterAccessible(character, unlocked)}
+                locked={!isCharacterAccessible(character, isSubscribed)}
               />
             ))}
           </View>

@@ -88,32 +88,65 @@ requirements source of truth, but may describe things not built yet.
     child access to commerce, not a COPPA age-screen (the FTC considers a bare math question
     insufficient for *that*, different purpose — verified via web search before committing to this
     approach, since it's a compliance-adjacent decision). `src/features/content-gating/PaywallScreen.tsx`
-    is the teaser reached on success — "Unlock the full pack" plus a **live** paid-character count
-    (`allCharacters.filter(tier === 'paid').length`, never hardcoded); its button is inert
-    ("Coming soon") since no IAP flow exists yet. New routes `/parental-gate` and `/paywall`
-    (`app/parental-gate.tsx`, `app/paywall.tsx`, registered in `app/_layout.tsx`). Locked tiles in
-    `CategoryGridScreen` now `router.push('/parental-gate')`; on success it `router.replace`s to
-    `/paywall`. **Note for anyone adding a route:** `.expo/types/router.d.ts` (typed-routes
-    codegen) is gitignored and only regenerates while the Expo dev server is running — a fresh
-    `tsc --noEmit` right after adding a new route file will fail until `expo start` (any platform)
-    has run at least once against the new file.
+    is the teaser reached on success, with a **live** paid-character count
+    (`allCharacters.filter(tier === 'paid').length`, never hardcoded). New routes `/parental-gate`
+    and `/paywall` (`app/parental-gate.tsx`, `app/paywall.tsx`, registered in `app/_layout.tsx`).
+    Locked tiles in `CategoryGridScreen` now `router.push('/parental-gate')`; on success it
+    `router.replace`s to `/paywall`. **Note for anyone adding a route:** `.expo/types/router.d.ts`
+    (typed-routes codegen) is gitignored and only regenerates while the Expo dev server is
+    running — a fresh `tsc --noEmit` right after adding a new route file will fail until
+    `expo start` (any platform) has run at least once against the new file.
+19. **Monetization model switched to subscription (2026-08-12, same session)** — overturns Open
+    Decision #2 (originally one-time non-consumable, chosen specifically to avoid renewal/expiry
+    complexity). The user wants recurring revenue; price/cadence still TBD. This is a real
+    complexity increase (correctly tracking active/expired/grace-period/cross-device state is the
+    single easiest thing to get subtly wrong in a subscription app, and Apple review scrutinizes it
+    closely), so before writing code this session went through an explicit research pass rather
+    than guessing:
+    - `react-native-iap` (the PRD's original implied library) turned out to now require **Nitro
+      Modules**, unverifiable in this project's browser-only dev loop and a real risk of a broken
+      EAS build discovered only after burning build time.
+    - `expo-iap` (same maintainer, now the Expo-endorsed path, real Expo Module + New Architecture
+      support) is a better-fit alternative if a direct store-API approach is ever revisited — found
+      via a second, deeper search after being asked to check more thoroughly.
+    - **Decided: RevenueCat**, specifically *because* it's a subscription now — its managed backend
+      owns renewal/expiry/grace-period/restore state instead of the app having to get that right
+      itself, which matters more for a solo dev than for a one-time purchase. Free up to ~$2,500/mo
+      revenue, then a percentage cut. Still needs its own account/setup, on top of Apple Developer
+      Program enrollment (neither exists yet — see "Not started").
+    - **Architecture: RevenueCat must never leak past one seam.** Per explicit user instruction,
+      `src/services/subscription/SubscriptionService.ts` defines the interface
+      (`getEntitlementStatus` → our own `SubscriptionStatus` shape, `purchaseSubscription`,
+      `restorePurchases`, `openSubscriptionManagement`) and every other file — `access.ts`,
+      `CategoryGridScreen`, `PaywallScreen` — depends only on that interface, never on RevenueCat's
+      types. `notConfiguredSubscriptionService.ts` is the current default: fails closed (never
+      reports active), purchase/restore report failure rather than pretending to succeed,
+      `openSubscriptionManagement` no-ops. Swapping in a real RevenueCat-backed implementation
+      later is a one-line change in `src/services/subscription/index.ts`.
+    - `openSubscriptionManagement()` exists because Apple requires subscribers be able to easily
+      view/cancel, same category of requirement as Restore Purchases — not optional to bolt on
+      later. `PaywallScreen` already branches on real entitlement status: the "already subscribed →
+      show Manage Subscription" path is unreachable today (the stub always reports inactive) but is
+      wired for real, so nothing here needs revisiting once RevenueCat is actually plugged in.
+    - The old one-time-unlock `entitlementService.ts` (permanent boolean flag) is gone — wrong
+      model for something that can lapse. `unlockPaidContent()` no longer exists; don't look for it.
 
-**Verified working state as of last check:** typecheck clean, lint clean, 675 tests passing across 11 suites (includes per-character hand-traced-data validation tests, `progressService`, `tiers`, content-gating, and `generateChallenge` tests). Manually walked through in-browser: Home → category grid → tracing → reward → next-letter, including the multi-stroke sequence and the end-of-list fallback, the skip button and grid lines; locked tiles across all three grids correctly blocking navigation; and — new this session — the full locked-tile → parental gate (wrong answer retries with a new problem, correct answer proceeds) → paywall teaser flow, while free tiles still navigate straight to the tracer. A good baseline to build on from a fresh session.
+**Verified working state as of last check:** typecheck clean, lint clean, 677 tests passing across 11 suites (includes per-character hand-traced-data validation tests, `progressService`, `tiers`, content-gating, `generateChallenge`, and `notConfiguredSubscriptionService` tests). Manually walked through in-browser: Home → category grid → tracing → reward → next-letter, including the multi-stroke sequence and the end-of-list fallback, the skip button and grid lines; locked tiles across all three grids correctly blocking navigation; and the full locked-tile → parental gate (wrong answer retries with a new problem, correct answer proceeds) → paywall teaser flow with the current subscription copy and Restore Purchases action, while free tiles still navigate straight to the tracer. A good baseline to build on from a fresh session.
 
 ### Not started
-- **IAP / purchase flow** — not started. No longer blocked (parental gate + paywall teaser exist now), but needs real App Store Connect product setup, which hasn't happened.
+- **IAP / purchase flow** — not started. Architecturally ready (`SubscriptionService` interface, `PaywallScreen` wired both ways), but blocked on two real-world setup steps that need the user directly: (1) Apple Developer Program enrollment, (2) a RevenueCat account connected to App Store Connect with a real subscription product configured. Installing `react-native-purchases` and writing the real implementation is the first step once those exist — see item 19.
 - **Audio** (reward sounds) — not started.
 - **App icon/splash artwork, a bundled display font** — the UX redesign (see below) intentionally scoped these out; still using default Expo icon assets and system fonts at bold weights as a placeholder for the mockup's rounded display face.
 
 ### UX redesign session (2026-08-11)
-A separate pass audited the pre-redesign flat `App.tsx` screen against professional UX standards, produced five mockup screens (Home, category grid, tracing, reward, paywall teaser — not persisted in-repo, they were review artifacts), and implemented four of them one at a time as Steps 1–4 above (items 8–14). **Step 5 — content-gating enforcement, the parental gate, and the paywall teaser — is now fully done (items 17-18).**
+A separate pass audited the pre-redesign flat `App.tsx` screen against professional UX standards, produced five mockup screens (Home, category grid, tracing, reward, paywall teaser — not persisted in-repo, they were review artifacts), and implemented four of them one at a time as Steps 1–4 above (items 8–14). **Step 5 — content-gating enforcement, the parental gate, and the paywall teaser — is now fully done (items 17-19).**
 
 ### Deviations from this document worth knowing about
 - **Section 3.6's free/paid split** described "a curated mix" (a few vowels + a few consonants + numbers 1–10), deliberately *not* split along script/category lines, so the free tier would show quality across both scripts. **What actually shipped: Hindi is a straight category split (all 13 vowels free, all 33 consonants + 3 conjuncts paid; decided 2026-08-11), while English and numbers ended up closer to the original "curated mix" intent — English gets 5 letters spread across the alphabet (A, I, L, O, T) rather than the first few, numbers get 1-5 free (decided 2026-08-12, alongside building gating enforcement — see item 17).** The split for every character now lives in one place, `src/content/tiers.ts`, specifically so it can be revisited without a content-file hunt if it turns out wrong once real users see it.
 - **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html` for Hindi, `tools/stroke-tracer-english.html` for English letters — same tool, different character list/font) that the user runs themselves — served locally (`npx serve tools` or `python -m http.server`) and used from a phone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. Two secondary approaches were tried and superseded for specific cases: auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`, used for one Hindi vowel's fallback base only) and procedural geometry generation (`tools/generate_english_number_strokes.py`, still actually in use for 10 of the 26 English letters — see item 6 above — after hand-tracing repeatedly out-performed it on proportion/centering issues that took several review rounds to pin down). See `docs/devanagari-stroke-data.md` and `docs/english-numbers-content-pipeline.md` for why and how.
 
 ### Where to look next
-- **IAP / purchase flow** is the natural next build step — see "Not started" above. Needs real App Store Connect product configuration before any code lands; `unlockPaidContent()` in `entitlementService.ts` and `PaywallScreen`'s inert button are the seams already waiting for it.
+- **IAP / purchase flow** is the natural next build step — see "Not started" above. The real blocker isn't code, it's two account setups only the user can do: Apple Developer Program enrollment, and a RevenueCat account with a subscription product configured against App Store Connect. `src/services/subscription/SubscriptionService.ts` is the seam already waiting for the real implementation.
 - `src/content/tiers.ts` — the single free/paid list; edit this to move a character between tiers.
 - `docs/devanagari-stroke-data.md` — the Hindi stroke-data pipeline in full: the hand-tracing tool workflow, the validation/repair tooling, data provenance, and (now done) how the conjuncts were added.
 - `docs/english-numbers-content-pipeline.md` — the English/numbers pipeline: the hand-tracing tool, the two import scripts, and the size-normalization pass, including the reasoning behind several rejected approaches (worth reading before touching `tools/normalize_sizes.py`, so a fix already tried and reverted doesn't get retried).
@@ -130,7 +163,7 @@ I asked clarifying questions before drafting this but didn't get answers back, s
 | # | Decision | Default assumed | Why | Alternative |
 |---|----------|-----------------|-----|-------------|
 | 1 | Tech stack | **React Native + Expo, built via EAS Build** | You already named EAS Build as an option, you want TypeScript throughout, you're on Windows with no Xcode, and you're not a senior engineer — Expo's managed workflow minimizes native-config pain and EAS Build compiles iOS in the cloud with almost no local setup. | Bare React Native + Codemagic (more native control, more complexity), or native Swift via Codemagic (best performance/Pencil latency, but no TypeScript and a much steeper solo-dev learning curve). |
-| 2 | Monetization | **One-time non-consumable IAP** ("unlock full content") | Simpler to implement (no receipt renewal/expiry logic), simpler for parents to understand, and typical for this category of kids' educational app. | Subscription — more recurring revenue potential but real added complexity (restore purchases, expiry, grace periods) that's hard to justify for a single-mechanic app. |
+| 2 | Monetization | ~~One-time non-consumable IAP~~ **Overturned 2026-08-12 — subscription instead, via RevenueCat.** Price/cadence TBD. | Original reasoning (avoid renewal/expiry complexity) still holds as a real cost, but the user wants recurring revenue; RevenueCat's managed backend absorbs most of that complexity instead of it landing on the app. See Section 0, item 19 for the architecture (`SubscriptionService` interface, RevenueCat never leaks past it) and the library research behind the choice. | — |
 | 3 | Audio scope | **Generic reward sounds only for MVP** (chime/cheer on completion), no per-character pronunciation audio | Avoids needing to record/source ~105 clean audio clips (49 Hindi + 26 English + 50 numbers, likely in more than one voice) before you can ship anything. | Per-character pronunciation audio — clearly valuable for a learning app, but treat as a fast-follow once the core mechanic is proven, not an MVP blocker. |
 | 4 | Stencil path authoring | **You hand-author/source the path data** (e.g. via a vector tool, traced font glyphs, or AI-assisted generation), delivered as coordinate data that I wire into the content JSON schema | No in-app authoring tool needed for MVP; keeps scope on the tracing engine, not tooling. | I build a small dev-only stencil-authoring screen so you can draw/export paths inside the app's own workflow — more upfront scope, possibly faster iteration long-term. |
 
