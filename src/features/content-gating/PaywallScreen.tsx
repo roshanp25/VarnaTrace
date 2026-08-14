@@ -6,19 +6,17 @@ import { subscriptionService } from '../../services/subscription';
 import { Colors } from '../../shared/theme';
 
 /**
- * Reached only after the parental gate is passed. The subscribe/restore buttons are inert —
- * purchasing isn't wired up yet (no RevenueCat account/product exists), so this is a teaser for
- * the real paywall, not the real thing. "Restore Purchases" is present even while inert because
- * it's a real UI requirement for any paid subscription, not an optional nicety to bolt on later.
- *
- * The "already subscribed" branch below is unreachable today (notConfiguredSubscriptionService
- * always reports inactive) but is wired for real against `subscriptionService` — the moment a real
- * backend reports an active entitlement, this screen correctly offers to manage it instead of
- * re-pitching the subscription, with no further changes needed here.
+ * Reached only after the parental gate is passed. Subscribe/restore call the real
+ * `subscriptionService` — on native that's RevenueCat (currently a Test Store key, so nothing
+ * here is a real purchase yet); on web it's a fail-closed stub, so both buttons harmlessly report
+ * failure there. "Restore Purchases" is a real UI requirement for any paid subscription, not an
+ * optional nicety.
  */
 export function PaywallScreen() {
   const paidCount = allCharacters.filter((c) => c.tier === 'paid').length;
   const [isActive, setIsActive] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
+  const [lastActionFailed, setLastActionFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,6 +29,28 @@ export function PaywallScreen() {
       cancelled = true;
     };
   }, []);
+
+  async function handleSubscribe() {
+    setIsBusy(true);
+    setLastActionFailed(false);
+    const { success } = await subscriptionService.purchaseSubscription();
+    setIsBusy(false);
+    setLastActionFailed(!success);
+    if (success) {
+      setIsActive(true);
+    }
+  }
+
+  async function handleRestore() {
+    setIsBusy(true);
+    setLastActionFailed(false);
+    const { success } = await subscriptionService.restorePurchases();
+    setIsBusy(false);
+    setLastActionFailed(!success);
+    if (success) {
+      setIsActive(true);
+    }
+  }
 
   if (isActive) {
     return (
@@ -55,12 +75,15 @@ export function PaywallScreen() {
       <Text style={styles.body}>
         Get every remaining letter, number, and Hindi character — {paidCount} more to trace.
       </Text>
-      <Pressable style={styles.button} disabled>
-        <Text style={styles.buttonText}>Coming soon</Text>
+      <Pressable style={styles.activeButton} onPress={handleSubscribe} disabled={isBusy}>
+        <Text style={styles.activeButtonText}>{isBusy ? 'Please wait…' : 'Subscribe'}</Text>
       </Pressable>
-      <Pressable style={styles.restoreButton} disabled>
+      <Pressable style={styles.restoreButton} onPress={handleRestore} disabled={isBusy}>
         <Text style={styles.restoreButtonText}>Restore Purchases</Text>
       </Pressable>
+      {lastActionFailed && (
+        <Text style={styles.errorText}>That didn&apos;t go through — please try again.</Text>
+      )}
     </View>
   );
 }
@@ -86,17 +109,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
   },
-  button: {
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    backgroundColor: Colors.neutralBg,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.neutralMuted,
-  },
   activeButton: {
     borderRadius: 999,
     paddingVertical: 12,
@@ -117,5 +129,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: Colors.neutralMuted,
+  },
+  errorText: {
+    fontSize: 13,
+    color: Colors.neutralText,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

@@ -2,7 +2,7 @@
 
 Status: **DRAFT — awaiting formal review**, but implementation has proceeded past several open
 decisions below via direct confirmation during build sessions — see Section 0.
-Last updated: 2026-08-12
+Last updated: 2026-08-13
 
 App Store listing:
 - App Name: **VarnaTrace: English & Hindi** (27 chars)
@@ -130,23 +130,76 @@ requirements source of truth, but may describe things not built yet.
       wired for real, so nothing here needs revisiting once RevenueCat is actually plugged in.
     - The old one-time-unlock `entitlementService.ts` (permanent boolean flag) is gone — wrong
       model for something that can lapse. `unlockPaidContent()` no longer exists; don't look for it.
+20. **Real RevenueCat SDK wired in (2026-08-13)** — the user completed Apple Developer Program
+    enrollment and created a RevenueCat account/project. Installed `react-native-purchases` (core
+    SDK only, via `npx expo install` not plain `npm install` — resolves the version compatible
+    with this Expo SDK) — **not** `react-native-purchases-ui`, since the custom `PaywallScreen`
+    from item 19 stays; confirmed with the user that offerings/entitlements/analytics/sandbox
+    testing all work identically without RevenueCat's prebuilt UI, only their paywall-template
+    A/B-testing and Customer Center screen require it, and neither is worth losing UI control for
+    in a Kids Category app.
+    - **The API key currently configured is a Test Store key** (`test_` prefix,
+      `src/services/subscription/config.ts`) — routes purchases through RevenueCat's simulated
+      store, not real Apple purchases. Needed before shipping: swap in the real Apple platform key
+      once a real App Store Connect product is linked in the RevenueCat dashboard.
+    - **Entitlement identifier hardcoded as `premium`** (also `config.ts`) — confirmed with the
+      user, but this must match the dashboard *exactly*; a mismatch doesn't error, it just makes
+      `getEntitlementStatus()` silently always report inactive. Worth a direct dashboard check
+      before assuming this integration works, even after a real device build.
+    - **A prompt pasted from RevenueCat's own onboarding flow (asking for Lifetime/Yearly/Monthly
+      tiers, an entitlement named "Roshan Poojary Pro", and RevenueCat's prebuilt Paywall UI +
+      Customer Center) was NOT followed as-is** — it was generic dashboard boilerplate, not a
+      deliberate spec, and conflicted with decisions already made this session (subscription-only,
+      no Lifetime tier; custom paywall, not RevenueCat's UI). Confirmed the real intent with the
+      user before writing anything. Worth remembering if a future session encounters another
+      vendor-dashboard-generated prompt: treat it as a starting point to interrogate, not
+      instructions to execute directly.
+    - **Platform split, critical to not breaking the web dev workflow:**
+      `src/services/subscription/index.ts` (no platform suffix) still exports
+      `notConfiguredSubscriptionService` and is what Metro resolves for web — untouched from item
+      19. New `index.native.ts` exports the real `revenueCatSubscriptionService.native.ts`
+      instead, and Metro picks it automatically for iOS/Android based on the `.native.ts`
+      extension alone, no `Platform.OS` branching anywhere. `react-native-purchases` is never
+      imported by anything web resolves — verified by actually rebundling `expo start --web` after
+      the install and confirming no errors, plus the full locked-tile → gate → paywall flow still
+      working against the stub (buttons now real, correctly show "That didn't go through" against
+      the fail-closed stub rather than silently succeeding).
+    - `isEntitlementActive(customerInfo, entitlementId)` (`src/services/subscription/isEntitlementActive.ts`)
+      is deliberately pure and typed against a minimal structural shape, not RevenueCat's real
+      `CustomerInfo` type — lets it be unit-tested without importing `react-native-purchases` at
+      all (which would risk crashing under Jest, a plain Node environment with no native bridge).
+      This is the one piece of the real integration that's actually unit-tested; the rest
+      (`revenueCatSubscriptionService.native.ts` itself) isn't, deliberately — wrapping a native
+      SDK isn't meaningfully unit-testable, and real verification only happens on a device.
+    - `PaywallScreen`'s Subscribe/Restore buttons are no longer inert — they call the real service
+      and show a busy state + a plain retry message on failure. `purchaseSubscription()` grabs
+      `offerings.current?.availablePackages[0]` (the dashboard's "current" offering's first
+      package) since there's only one subscription tier to offer; revisit if/when multiple
+      price points get introduced.
+    - **Still cannot be tested end-to-end here** — no Expo Go support (native module), no web
+      support (platform-split stub used instead), so the first real test of any of this happens
+      via an Expo Dev Client / EAS build on the user's own device. Everything up to that point
+      (typecheck, lint, all 680 tests, the web-preview walkthrough) is as far as this environment
+      can verify.
 
-**Verified working state as of last check:** typecheck clean, lint clean, 677 tests passing across 11 suites (includes per-character hand-traced-data validation tests, `progressService`, `tiers`, content-gating, `generateChallenge`, and `notConfiguredSubscriptionService` tests). Manually walked through in-browser: Home → category grid → tracing → reward → next-letter, including the multi-stroke sequence and the end-of-list fallback, the skip button and grid lines; locked tiles across all three grids correctly blocking navigation; and the full locked-tile → parental gate (wrong answer retries with a new problem, correct answer proceeds) → paywall teaser flow with the current subscription copy and Restore Purchases action, while free tiles still navigate straight to the tracer. A good baseline to build on from a fresh session.
+**Verified working state as of last check:** typecheck clean, lint clean, 680 tests passing across 12 suites (adds `isEntitlementActive` to the previous list). Manually walked through in-browser: Home → category grid → tracing → reward → next-letter, the multi-stroke sequence, skip button, grid lines; locked tiles across all three grids blocking navigation; the full locked-tile → parental gate → paywall flow, now with real Subscribe/Restore buttons correctly reporting failure against the web stub instead of silently succeeding. Confirmed no bundling errors and no console errors after installing `react-native-purchases`, i.e. the web dev workflow this project depends on is intact. **Not verified anywhere in this environment:** any actual native RevenueCat behavior — that needs a Dev Client/EAS build on a real device.
 
 ### Not started
-- **IAP / purchase flow** — not started. Architecturally ready (`SubscriptionService` interface, `PaywallScreen` wired both ways), but blocked on two real-world setup steps that need the user directly: (1) Apple Developer Program enrollment, (2) a RevenueCat account connected to App Store Connect with a real subscription product configured. Installing `react-native-purchases` and writing the real implementation is the first step once those exist — see item 19.
+- **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about item 20 has been exercised on an actual device yet. Also needs the dashboard checks noted in item 20 (entitlement name match, at least one package on the current offering) before it can work even then.
+- **Swapping the Test Store key for a real Apple key** — needs a real App Store Connect subscription product linked in the RevenueCat dashboard first.
 - **Audio** (reward sounds) — not started.
 - **App icon/splash artwork, a bundled display font** — the UX redesign (see below) intentionally scoped these out; still using default Expo icon assets and system fonts at bold weights as a placeholder for the mockup's rounded display face.
 
 ### UX redesign session (2026-08-11)
-A separate pass audited the pre-redesign flat `App.tsx` screen against professional UX standards, produced five mockup screens (Home, category grid, tracing, reward, paywall teaser — not persisted in-repo, they were review artifacts), and implemented four of them one at a time as Steps 1–4 above (items 8–14). **Step 5 — content-gating enforcement, the parental gate, and the paywall teaser — is now fully done (items 17-19).**
+A separate pass audited the pre-redesign flat `App.tsx` screen against professional UX standards, produced five mockup screens (Home, category grid, tracing, reward, paywall teaser — not persisted in-repo, they were review artifacts), and implemented four of them one at a time as Steps 1–4 above (items 8–14). **Step 5 — content-gating enforcement, the parental gate, and the paywall teaser — is now fully done (items 17-20), including a real (Test-Store-backed) purchase flow.**
 
 ### Deviations from this document worth knowing about
 - **Section 3.6's free/paid split** described "a curated mix" (a few vowels + a few consonants + numbers 1–10), deliberately *not* split along script/category lines, so the free tier would show quality across both scripts. **What actually shipped: Hindi is a straight category split (all 13 vowels free, all 33 consonants + 3 conjuncts paid; decided 2026-08-11), while English and numbers ended up closer to the original "curated mix" intent — English gets 5 letters spread across the alphabet (A, I, L, O, T) rather than the first few, numbers get 1-5 free (decided 2026-08-12, alongside building gating enforcement — see item 17).** The split for every character now lives in one place, `src/content/tiers.ts`, specifically so it can be revisited without a content-file hunt if it turns out wrong once real users see it.
 - **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html` for Hindi, `tools/stroke-tracer-english.html` for English letters — same tool, different character list/font) that the user runs themselves — served locally (`npx serve tools` or `python -m http.server`) and used from a phone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. Two secondary approaches were tried and superseded for specific cases: auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`, used for one Hindi vowel's fallback base only) and procedural geometry generation (`tools/generate_english_number_strokes.py`, still actually in use for 10 of the 26 English letters — see item 6 above — after hand-tracing repeatedly out-performed it on proportion/centering issues that took several review rounds to pin down). See `docs/devanagari-stroke-data.md` and `docs/english-numbers-content-pipeline.md` for why and how.
 
 ### Where to look next
-- **IAP / purchase flow** is the natural next build step — see "Not started" above. The real blocker isn't code, it's two account setups only the user can do: Apple Developer Program enrollment, and a RevenueCat account with a subscription product configured against App Store Connect. `src/services/subscription/SubscriptionService.ts` is the seam already waiting for the real implementation.
+- **Real device verification of the RevenueCat integration** is the natural next step — see "Not started" above. Needs an Expo Dev Client / EAS build; check the RevenueCat dashboard's entitlement name (must be exactly `premium`) and that the "current" offering has at least one package, since either being wrong fails silently rather than erroring.
+- `src/services/subscription/` — `SubscriptionService.ts` (the interface), `config.ts` (API key + entitlement id — currently a Test Store key), `index.ts` vs `index.native.ts` (the web/native platform split — read the comments in both before changing either, since getting this wrong risks breaking the web dev workflow).
 - `src/content/tiers.ts` — the single free/paid list; edit this to move a character between tiers.
 - `docs/devanagari-stroke-data.md` — the Hindi stroke-data pipeline in full: the hand-tracing tool workflow, the validation/repair tooling, data provenance, and (now done) how the conjuncts were added.
 - `docs/english-numbers-content-pipeline.md` — the English/numbers pipeline: the hand-tracing tool, the two import scripts, and the size-normalization pass, including the reasoning behind several rejected approaches (worth reading before touching `tools/normalize_sizes.py`, so a fix already tried and reverted doesn't get retried).
