@@ -7,8 +7,12 @@ describe('notConfiguredSubscriptionService', () => {
     });
   });
 
+  it('reports no available plans', async () => {
+    expect(await notConfiguredSubscriptionService.getAvailablePlans()).toEqual([]);
+  });
+
   it('reports purchase as unsuccessful rather than silently succeeding', async () => {
-    expect(await notConfiguredSubscriptionService.purchaseSubscription()).toEqual({
+    expect(await notConfiguredSubscriptionService.purchaseSubscription('monthly')).toEqual({
       success: false,
     });
   });

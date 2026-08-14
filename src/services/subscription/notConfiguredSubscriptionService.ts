@@ -1,15 +1,17 @@
 import { SubscriptionService } from './SubscriptionService';
 
 /**
- * Default SubscriptionService until RevenueCat is actually wired up (needs a RevenueCat account +
- * an Apple Developer Program enrollment + a configured subscription product — none of which exist
- * yet). Fails closed: never reports an active entitlement, and purchase/restore are no-ops that
- * report failure rather than silently pretending to succeed. `PaywallScreen`'s buttons stay inert
- * ("Coming soon") against this implementation.
+ * Fail-closed SubscriptionService: never reports an active entitlement or available plans, and
+ * purchase/restore report failure rather than silently pretending to succeed. This is what web
+ * resolves to (see ../index.ts vs ../index.native.ts) — react-native-purchases has no web
+ * implementation, so web intentionally never attempts to use it.
  */
 export const notConfiguredSubscriptionService: SubscriptionService = {
   async getEntitlementStatus() {
     return { isActive: false };
+  },
+  async getAvailablePlans() {
+    return [];
   },
   async purchaseSubscription() {
     return { success: false };

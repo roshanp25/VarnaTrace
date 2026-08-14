@@ -1,7 +1,12 @@
 import { revenueCatSubscriptionService } from './revenueCatSubscriptionService.native';
 import { SubscriptionService } from './SubscriptionService';
 
-export type { SubscriptionService, SubscriptionStatus } from './SubscriptionService';
+export type {
+  SubscriptionService,
+  SubscriptionStatus,
+  SubscriptionPlan,
+  SubscriptionPlanOption,
+} from './SubscriptionService';
 
 /**
  * Metro picks this file (not ./index.ts) for iOS/Android automatically, based on the `.native.ts`

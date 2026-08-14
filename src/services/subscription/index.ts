@@ -1,7 +1,12 @@
 import { notConfiguredSubscriptionService } from './notConfiguredSubscriptionService';
 import { SubscriptionService } from './SubscriptionService';
 
-export type { SubscriptionService, SubscriptionStatus } from './SubscriptionService';
+export type {
+  SubscriptionService,
+  SubscriptionStatus,
+  SubscriptionPlan,
+  SubscriptionPlanOption,
+} from './SubscriptionService';
 
 /**
  * This is the **web** entry point — Metro resolves `index.native.ts` instead for iOS/Android,

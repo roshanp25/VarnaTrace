@@ -1,12 +1,25 @@
-import Purchases from 'react-native-purchases';
+import Purchases, { PurchasesPackage } from 'react-native-purchases';
 
 import { ENTITLEMENT_ID, REVENUECAT_API_KEY } from './config';
 import { isEntitlementActive } from './isEntitlementActive';
-import { SubscriptionService } from './SubscriptionService';
+import { planForPackageType } from './planForPackageType';
+import { SubscriptionPlan, SubscriptionPlanOption, SubscriptionService } from './SubscriptionService';
 
 // Configure once, at module load — every method below assumes this has already run. Only ever
 // evaluated on native (this file has no web counterpart; see ../index.ts vs ../index.native.ts).
 Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+
+async function getCurrentPackages(): Promise<PurchasesPackage[]> {
+  const offerings = await Purchases.getOfferings();
+  return offerings.current?.availablePackages ?? [];
+}
+
+function findPackageForPlan(
+  packages: PurchasesPackage[],
+  plan: SubscriptionPlan,
+): PurchasesPackage | undefined {
+  return packages.find((pkg) => planForPackageType(pkg.packageType) === plan);
+}
 
 export const revenueCatSubscriptionService: SubscriptionService = {
   async getEntitlementStatus() {
@@ -14,15 +27,27 @@ export const revenueCatSubscriptionService: SubscriptionService = {
     return { isActive: isEntitlementActive(customerInfo, ENTITLEMENT_ID) };
   },
 
-  async purchaseSubscription() {
+  async getAvailablePlans() {
+    const packages = await getCurrentPackages();
+    const options: SubscriptionPlanOption[] = [];
+    for (const pkg of packages) {
+      const plan = planForPackageType(pkg.packageType);
+      if (plan) {
+        options.push({ plan, priceString: pkg.product.priceString });
+      }
+    }
+    return options;
+  },
+
+  async purchaseSubscription(plan) {
     try {
-      const offerings = await Purchases.getOfferings();
-      const currentPackage = offerings.current?.availablePackages[0];
-      if (!currentPackage) {
-        console.error('purchaseSubscription: no package available on the current offering');
+      const packages = await getCurrentPackages();
+      const targetPackage = findPackageForPlan(packages, plan);
+      if (!targetPackage) {
+        console.error(`purchaseSubscription: no package available for plan "${plan}"`);
         return { success: false };
       }
-      const { customerInfo } = await Purchases.purchasePackage(currentPackage);
+      const { customerInfo } = await Purchases.purchasePackage(targetPackage);
       return { success: isEntitlementActive(customerInfo, ENTITLEMENT_ID) };
     } catch (error) {
       console.error('purchaseSubscription failed', error);
