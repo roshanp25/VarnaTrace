@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { allCharacters } from '../../content';
 import {
@@ -79,15 +80,16 @@ export function PaywallScreen() {
   if (isActive) {
     return (
       <View style={styles.container}>
+        <StarIcon />
         <Text style={styles.title}>You&apos;re subscribed</Text>
         <Text style={styles.body}>Full access to every letter, number, and Hindi character.</Text>
         <Pressable
-          style={styles.activeButton}
+          style={styles.cta}
           onPress={() => {
             subscriptionService.openSubscriptionManagement();
           }}
         >
-          <Text style={styles.activeButtonText}>Manage Subscription</Text>
+          <Text style={styles.ctaText}>Manage Subscription</Text>
         </Pressable>
       </View>
     );
@@ -95,10 +97,22 @@ export function PaywallScreen() {
 
   return (
     <View style={styles.container}>
+      <StarIcon />
       <Text style={styles.title}>Subscribe for full access</Text>
       <Text style={styles.body}>
         Get every remaining letter, number, and Hindi character — {paidCount} more to trace.
       </Text>
+
+      <View style={styles.unlockList}>
+        <View style={styles.unlockRow}>
+          <CheckDot color={Colors.english} />
+          <Text style={styles.unlockText}>Every category unlocked</Text>
+        </View>
+        <View style={styles.unlockRow}>
+          <CheckDot color={Colors.numbers} />
+          <Text style={styles.unlockText}>Progress saved automatically</Text>
+        </View>
+      </View>
 
       {plans.length > 0 && (
         <View style={styles.planRow}>
@@ -111,24 +125,21 @@ export function PaywallScreen() {
                 onPress={() => setSelectedPlan(option.plan)}
                 disabled={isBusy}
               >
-                <Text style={[styles.planChipLabel, selected && styles.planChipLabelSelected]}>
-                  {PLAN_LABELS[option.plan]}
-                </Text>
-                <Text style={[styles.planChipPrice, selected && styles.planChipLabelSelected]}>
-                  {option.priceString}
-                </Text>
+                {option.plan === 'yearly' && (
+                  <View style={styles.planTag}>
+                    <Text style={styles.planTagText}>Best value</Text>
+                  </View>
+                )}
+                <Text style={styles.planChipLabel}>{PLAN_LABELS[option.plan]}</Text>
+                <Text style={styles.planChipPrice}>{option.priceString}</Text>
               </Pressable>
             );
           })}
         </View>
       )}
 
-      <Pressable
-        style={styles.activeButton}
-        onPress={handleSubscribe}
-        disabled={isBusy || !selectedPlan}
-      >
-        <Text style={styles.activeButtonText}>{isBusy ? 'Please wait…' : 'Subscribe'}</Text>
+      <Pressable style={styles.cta} onPress={handleSubscribe} disabled={isBusy || !selectedPlan}>
+        <Text style={styles.ctaText}>{isBusy ? 'Please wait…' : 'Subscribe'}</Text>
       </Pressable>
       <Pressable style={styles.restoreButton} onPress={handleRestore} disabled={isBusy}>
         <Text style={styles.restoreButtonText}>Restore Purchases</Text>
@@ -137,6 +148,22 @@ export function PaywallScreen() {
         <Text style={styles.errorText}>That didn&apos;t go through — please try again.</Text>
       )}
     </View>
+  );
+}
+
+function StarIcon() {
+  return (
+    <Svg width={30} height={30} viewBox="0 0 24 24" fill={Colors.gold} style={{ marginBottom: 4 }}>
+      <Path d="M12 2l2.9 6.6L22 9.3l-5 4.9 1.2 7-6.2-3.6L5.8 21 7 14l-5-4.9 7.1-.7z" />
+    </Svg>
+  );
+}
+
+function CheckDot({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill={color}>
+      <Circle cx={12} cy={12} r={10} />
+    </Svg>
   );
 }
 
@@ -159,7 +186,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.neutralText,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
+  },
+  unlockList: {
+    alignSelf: 'stretch',
+    gap: 8,
+    marginBottom: 8,
+  },
+  unlockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  unlockText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.ink,
   },
   planRow: {
     flexDirection: 'row',
@@ -168,35 +210,49 @@ const styles = StyleSheet.create({
   },
   planChip: {
     borderRadius: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 18,
-    backgroundColor: Colors.neutralBg,
+    backgroundColor: Colors.panel,
+    borderWidth: 2,
+    borderColor: 'rgba(36,27,69,0.08)',
     alignItems: 'center',
     minWidth: 100,
+    position: 'relative',
   },
   planChipSelected: {
-    backgroundColor: Colors.ink,
+    borderColor: Colors.brand,
+  },
+  planTag: {
+    position: 'absolute',
+    top: -10,
+    alignSelf: 'center',
+    backgroundColor: Colors.hindiInk,
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
+  },
+  planTagText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: Colors.paper,
   },
   planChipLabel: {
     fontSize: 14,
     fontWeight: '700',
-    color: Colors.neutralText,
+    color: Colors.ink,
   },
   planChipPrice: {
     fontSize: 13,
     color: Colors.neutralMuted,
     marginTop: 2,
   },
-  planChipLabelSelected: {
-    color: Colors.paper,
-  },
-  activeButton: {
+  cta: {
     borderRadius: 999,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 32,
-    backgroundColor: Colors.ink,
+    backgroundColor: Colors.brand,
   },
-  activeButtonText: {
+  ctaText: {
     fontSize: 16,
     fontWeight: '700',
     color: Colors.paper,

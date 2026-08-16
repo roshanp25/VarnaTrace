@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Link, useFocusEffect } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { getCharactersByScript, Script } from '../../content';
 import { SCRIPT_LABELS } from '../../shared/categories';
@@ -15,6 +15,11 @@ const CATEGORY_COPY: Record<Script, { name: string; route: '/english' | '/hindi'
   number: { name: SCRIPT_LABELS.number, route: '/number' },
 };
 
+const RING_SIZE = 64;
+const RING_RADIUS = 28;
+const RING_STROKE = 3.5;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
 function CategoryCard({ script, completedIds }: { script: Script; completedIds: Set<string> }) {
   const characters = getCharactersByScript(script);
   const total = characters.length;
@@ -22,19 +27,43 @@ function CategoryCard({ script, completedIds }: { script: Script; completedIds: 
   const sample = characters[0];
   const colors = getCategoryColors(script);
   const copy = CATEGORY_COPY[script];
+  const progress = total > 0 ? done / total : 0;
 
   return (
     <Link href={copy.route} asChild>
-      <Pressable style={StyleSheet.flatten([styles.card, { backgroundColor: colors.soft }])}>
-        <View style={styles.cardGlyph}>
-          <Text
-            style={[
-              styles.cardGlyphText,
-              { color: colors.ink, fontFamily: fontFamilyForScript(script) },
-            ]}
-          >
-            {sample?.displayLabel}
-          </Text>
+      <Pressable style={styles.card}>
+        <View style={styles.cardRingWrap}>
+          <Svg width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`} style={styles.cardRing}>
+            <Circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RING_RADIUS}
+              stroke="rgba(36,27,69,0.08)"
+              strokeWidth={RING_STROKE}
+              fill="none"
+            />
+            <Circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RING_RADIUS}
+              stroke={colors.fill}
+              strokeWidth={RING_STROKE}
+              strokeLinecap="round"
+              fill="none"
+              strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
+              strokeDashoffset={RING_CIRCUMFERENCE * (1 - progress)}
+            />
+          </Svg>
+          <View style={[styles.cardGlyph, { backgroundColor: colors.soft }]}>
+            <Text
+              style={[
+                styles.cardGlyphText,
+                { color: colors.ink, fontFamily: fontFamilyForScript(script) },
+              ]}
+            >
+              {sample?.displayLabel}
+            </Text>
+          </View>
         </View>
         <View style={styles.cardMeta}>
           <Text style={[styles.cardName, { color: colors.ink, fontFamily: fontFamilyForScript(script) }]}>
@@ -46,6 +75,20 @@ function CategoryCard({ script, completedIds }: { script: Script; completedIds: 
         </View>
       </Pressable>
     </Link>
+  );
+}
+
+/** Purely decorative — no state, no data model. */
+function MascotDoodle() {
+  return (
+    <Svg width={36} height={50} viewBox="0 0 40 56" style={styles.mascot}>
+      <Rect x={10} y={4} width={20} height={38} rx={9} fill={Colors.gold} />
+      <Rect x={11} y={2} width={18} height={10} rx={5} fill="#FF5A7A" />
+      <Path d="M13 38 L27 40 L21 54 Z" fill="#3A2A16" />
+      <Circle cx={17} cy={18} r={1.8} fill={Colors.ink} />
+      <Circle cx={25} cy={20} r={1.8} fill={Colors.ink} />
+      <Path d="M16 25 Q21 29 27 24" stroke={Colors.ink} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+    </Svg>
   );
 }
 
@@ -70,7 +113,7 @@ export function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.wordmark}>
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-          <Path d="M4 19c4-9 8-13 16-15" stroke={Colors.ink} strokeWidth={2.4} strokeLinecap="round" />
+          <Path d="M4 19c4-9 8-13 16-15" stroke={Colors.brand} strokeWidth={2.6} strokeLinecap="round" />
         </Svg>
         <Text style={styles.wordmarkText}>VarnaTrace</Text>
       </View>
@@ -79,6 +122,10 @@ export function HomeScreen() {
       <CategoryCard script="english" completedIds={completedIds} />
       <CategoryCard script="hindi" completedIds={completedIds} />
       <CategoryCard script="number" completedIds={completedIds} />
+
+      <View style={styles.mascotRow}>
+        <MascotDoodle />
+      </View>
     </View>
   );
 }
@@ -107,23 +154,35 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   card: {
+    backgroundColor: Colors.panel,
+    borderWidth: 2,
+    borderColor: 'rgba(36,27,69,0.08)',
     borderRadius: 20,
-    padding: 16,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     marginBottom: 14,
   },
+  cardRingWrap: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardRing: {
+    position: 'absolute',
+    transform: [{ rotate: '-90deg' }],
+  },
   cardGlyph: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.65)',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardGlyphText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
   },
   cardMeta: {
@@ -137,5 +196,16 @@ const styles = StyleSheet.create({
   cardSub: {
     fontSize: 12,
     opacity: 0.75,
+  },
+  mascotRow: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    paddingBottom: 8,
+    paddingRight: 4,
+    pointerEvents: 'none',
+  },
+  mascot: {
+    opacity: 0.9,
   },
 });

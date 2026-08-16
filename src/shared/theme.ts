@@ -10,27 +10,32 @@ import { Script } from '../content';
  * - an `Ink` tone for anything rendering as text/glyphs on top of `Soft`.
  * `Ink` exists because a single mid-tone color reused as both a soft background and its own text
  * color measures well under WCAG AA contrast (verified: hindi accent alone was ~2.6:1 on its own
- * soft tint). Every `*Ink` value below is verified at 4.5:1+ against both its matching `Soft`
- * background and `paper`.
+ * soft tint). Every `*Ink` value below is verified at 4.5:1+ against `Soft`, `paper`, and `panel`.
+ *
+ * `brand` is the one accent that isn't tied to a script — used for primary CTAs so a subscribe
+ * button doesn't compete with any category color. `panel` is the shared card background (cards
+ * carry their color via ring/glyph accents now, not a per-category tinted fill).
  */
 export const Colors = {
   ink: '#241B45',
   paper: '#FFFDF8',
+  panel: '#FBF1DD',
+  brand: '#6C4DFF',
 
-  english: '#226B87',
-  englishSoft: '#D6E9EE',
-  englishInk: '#226B87',
+  english: '#2FB8E6',
+  englishSoft: '#DCF3FC',
+  englishInk: '#0E6E8C',
 
-  hindi: '#E0921E',
-  hindiSoft: '#FBEACB',
-  hindiInk: '#7A4200',
+  hindi: '#FF9B2F',
+  hindiSoft: '#FFEBD1',
+  hindiInk: '#95500A',
 
-  numbers: '#457A44',
-  numbersSoft: '#DEEBDC',
-  numbersInk: '#355C34',
+  numbers: '#4CD07D',
+  numbersSoft: '#DFF9E7',
+  numbersInk: '#1D7A3E',
 
-  gold: '#E3A022',
-  goldSoft: '#FBEBC6',
+  gold: '#FFD23F',
+  goldSoft: '#FFF3C9',
 
   neutralBg: '#F1EEF8',
   neutralText: '#6B6485',
