@@ -16,7 +16,8 @@ export const SCRIPT_TAGLINES: Record<Script, string> = {
 
 /** Section header copy for a category grid group. Only shown when a script has >1 category. */
 export const CATEGORY_LABELS: Record<Category, string> = {
-  letter: 'Letters',
+  letter: 'Uppercase',
+  'letter-lower': 'Lowercase',
   vowel: 'Vowels · स्वर',
   consonant: 'Consonants · व्यंजन',
   conjunct: 'Conjuncts · संयुक्ताक्षर',
@@ -24,4 +25,4 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 };
 
 /** Fixed group order for the category grid; unlisted categories are appended at the end. */
-export const CATEGORY_ORDER: Category[] = ['letter', 'vowel', 'consonant', 'conjunct', 'number'];
+export const CATEGORY_ORDER: Category[] = ['letter', 'letter-lower', 'vowel', 'consonant', 'conjunct', 'number'];

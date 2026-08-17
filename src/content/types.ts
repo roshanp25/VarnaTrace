@@ -1,7 +1,7 @@
 import { StencilPath } from '../engine';
 
 export type Script = 'english' | 'hindi' | 'number';
-export type Category = 'letter' | 'vowel' | 'consonant' | 'conjunct' | 'number';
+export type Category = 'letter' | 'letter-lower' | 'vowel' | 'consonant' | 'conjunct' | 'number';
 export type Tier = 'free' | 'paid';
 
 export interface RawCharacterContent {
