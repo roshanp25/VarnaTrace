@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { getCharacterById, getCharactersByScript } from '../../content';
-import { DEFAULT_DIFFICULTY, Difficulty, MultiStrokeScoreResult } from '../../engine';
+import { DEFAULT_DIFFICULTY, Difficulty, DIFFICULTY_CONFIGS, MultiStrokeScoreResult } from '../../engine';
 import { fontFamilyForScript } from '../../shared/fonts';
 import { Colors, getCategoryColors } from '../../shared/theme';
 import { markCharacterCompleted } from '../progress/progressService';
@@ -38,6 +38,7 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
   }
 
   const categoryColors = getCategoryColors(character.script);
+  const showGuidedDemoControls = DIFFICULTY_CONFIGS[difficulty].guidedDemo;
 
   const reset = () => {
     setResult(null);
@@ -143,6 +144,11 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
         <Pressable style={styles.clearButton} onPress={handleNext} accessibilityLabel="Skip to next character">
           <Text style={styles.clearButtonIcon}>→</Text>
         </Pressable>
+        {showGuidedDemoControls && (
+          <Pressable style={styles.clearButton} onPress={reset} accessibilityLabel="Show guided trace again">
+            <Text style={styles.clearButtonIcon}>✏️</Text>
+          </Pressable>
+        )}
       </View>
 
       {result && (

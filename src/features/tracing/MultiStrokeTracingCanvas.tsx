@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { View } from 'react-native';
 
 import {
   DEFAULT_DIFFICULTY,
@@ -11,7 +12,8 @@ import {
   TraceScoreResult,
 } from '../../engine';
 
-import { TracingCanvas } from './TracingCanvas';
+import { TraceDemo } from './TraceDemo';
+import { DEFAULT_TRACE_COLOR, DEFAULT_VIEW_BOX_SIZE, TracingCanvas } from './TracingCanvas';
 
 export interface MultiStrokeTracingCanvasProps {
   /** The strokes to trace, in order, each in the coordinate space defined by `viewBoxSize`. */
@@ -45,6 +47,11 @@ const RETRY_HINT_DURATION_MS = 1000;
  * changes under it — callers switching to a different character (or retrying the same one) must
  * remount it via a changing `key` (e.g. tied to the character's id), per React's own guidance to
  * prefer remounting over resetting state in an effect.
+ *
+ * When `difficulty`'s config enables `guidedDemo`, an animated arrow (TraceDemo) plays over the
+ * canvas on mount, tracing every stroke in order before the underlying TracingCanvas accepts
+ * touch input (`disabled` while the demo runs). Remounting (the same `key` mechanism above)
+ * replays it — there's no separate imperative "replay" API.
  */
 export function MultiStrokeTracingCanvas({
   strokes,
@@ -56,11 +63,16 @@ export function MultiStrokeTracingCanvas({
   difficulty = DEFAULT_DIFFICULTY,
 }: MultiStrokeTracingCanvasProps) {
   const config = DIFFICULTY_CONFIGS[difficulty];
+  const resolvedViewBoxSize = viewBoxSize ?? DEFAULT_VIEW_BOX_SIZE;
+  const resolvedTraceColor = traceColor ?? DEFAULT_TRACE_COLOR;
 
   const [strokeIndex, setStrokeIndex] = useState(0);
   const [completedStrokes, setCompletedStrokes] = useState<Point[][]>([]);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
   const [hintText, setHintText] = useState<string | null>(null);
+  // Plays once per mount when the difficulty enables it — callers wanting a replay (e.g. a "show
+  // me again" button) remount this component via a changing `key`, same as switching characters.
+  const [demoPlaying, setDemoPlaying] = useState(config.guidedDemo);
 
   useEffect(() => {
     onStrokeIndexChange?.(strokeIndex, strokes.length);
@@ -133,18 +145,30 @@ export function MultiStrokeTracingCanvas({
   const otherStencilGuides = strokes.filter((_, i) => i !== strokeIndex);
 
   return (
-    <TracingCanvas
-      stencil={strokes[strokeIndex]}
-      viewBoxSize={viewBoxSize}
-      size={size}
-      tracedPoints={currentPoints}
-      onTracedPointsChange={handleTracedPointsChange}
-      onComplete={handleStrokeComplete}
-      completedStrokes={completedStrokes}
-      otherStencilGuides={otherStencilGuides}
-      traceColor={traceColor}
-      hintText={hintText}
-      scoringOptions={config.scoring}
-    />
+    <View style={{ width: size, height: size }}>
+      <TracingCanvas
+        stencil={strokes[strokeIndex]}
+        viewBoxSize={viewBoxSize}
+        size={size}
+        tracedPoints={currentPoints}
+        onTracedPointsChange={handleTracedPointsChange}
+        onComplete={handleStrokeComplete}
+        completedStrokes={completedStrokes}
+        otherStencilGuides={otherStencilGuides}
+        traceColor={traceColor}
+        hintText={hintText}
+        scoringOptions={config.scoring}
+        disabled={demoPlaying}
+      />
+      {demoPlaying && (
+        <TraceDemo
+          strokes={strokes}
+          size={size}
+          viewBoxSize={resolvedViewBoxSize}
+          color={resolvedTraceColor}
+          onComplete={() => setDemoPlaying(false)}
+        />
+      )}
+    </View>
   );
 }

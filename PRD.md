@@ -230,15 +230,38 @@ requirements source of truth, but may describe things not built yet.
       time the trace screen mounts. Revisit if/when a real settings surface gets built.
     - Also fixed the reward card's backdrop appearing with an instant cut instead of fading in
       (`RewardOverlay`, `Animated.timing` on opacity) — unrelated polish bundled in the same session.
+    - **Guided arrow demo, added the same day after user feedback** that Easy/Hard felt
+      indistinguishable to a user despite being meaningfully stricter under the hood — the user
+      explicitly asked to gate a new guidance feature to Easy specifically to make the difference
+      visible, overriding an initial recommendation to make direction cues difficulty-independent.
+      New `src/features/tracing/TraceDemo.tsx`: a small SVG arrowhead travels along each stroke of
+      the character in order (constant 700ms per stroke + 250ms pause between strokes, direction
+      computed from the resampled path's tangent via `resamplePathByArcLength`, now re-exported
+      from `src/engine/index.ts`), before the child can draw. `TracingCanvas` gained a `disabled`
+      prop (gates `PanResponder`'s `onStartShouldSetPanResponder`/`onMoveShouldSetPanResponder`) so
+      a stray touch can't start a real stroke underneath the demo. `MultiStrokeTracingCanvas` plays
+      it automatically on every mount when `difficulty`'s config has `guidedDemo: true` (Easy only;
+      `DifficultyConfig.guidedDemo`, false for difficult) — there's no separate imperative "replay"
+      API, a caller wanting a replay just remounts via the same `key` mechanism already used for
+      switching characters. `TracingScreen` adds a pencil-icon (✏️) button next to Clear/Skip,
+      shown only when `DIFFICULTY_CONFIGS[difficulty].guidedDemo` is true, wired to the same
+      `reset()` as Clear (replaying the demo is a full restart of the current attempt, not a
+      pause/resume).
+      **Verification note:** this environment's screenshot tool doesn't render the Browser pane
+      (established earlier, see [[varnatrace-project]]'s browser-verification technique), so this
+      was verified via console-timestamped logs instead of visual screenshots — confirmed a real
+      4-stroke Hindi character's demo fired stroke transitions at +5ms/+975ms/+1935ms/+2896ms/
+      +3858ms, matching the coded per-stroke timing exactly (not a stub/no-op). Also confirmed
+      in-browser that Hard mode renders neither the arrow overlay nor the pencil button.
 
 **Verified working state as of last check:** typecheck clean, lint clean, engine suite green
 (`scoreTrace`, `scoreMultiStrokeTrace`, `difficulty`, 3 new tests for the new options/config).
-Manually walked through the Easy/Hard toggle in-browser: default is Easy, tapping Hard flips the
-active pill, no console errors. **Not verified in this environment:** the retry mechanic's actual
-feel on a real touch/Pencil trace (needs a device — browser mouse-drag wasn't used to simulate a
-weak stroke). Two pre-existing, unrelated test failures exist in
-`src/content/__tests__/` (a stale snapshot and a content-data assertion) — confirmed present before
-this session's changes too, not touched here.
+Manually walked through the Easy/Hard toggle and the guided arrow demo in-browser (see above).
+**Not verified in this environment:** the retry mechanic's or the guided demo's actual feel on a
+real touch/Pencil trace (needs a device — browser mouse-drag wasn't used to simulate a weak
+stroke). Two pre-existing, unrelated test failures exist in `src/content/__tests__/` (a stale
+snapshot and a content-data assertion) — confirmed present before this session's changes too, not
+touched here.
 
 ### Not started
 - **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21 has been exercised on an actual device yet. The dashboard is now correctly configured (entitlement `premium`, Monthly/Yearly products attached, single offering marked current) as far as could be checked from screenshots — first real proof this all actually works is a device build.

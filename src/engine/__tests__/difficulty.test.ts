@@ -11,16 +11,18 @@ describe('DIFFICULTY_CONFIGS', () => {
     expect(easy.threeStarThreshold).toBeLessThan(difficult.threeStarThreshold);
   });
 
-  it('gives easy an average-based multi-stroke pass rule and a retry mechanic', () => {
+  it('gives easy an average-based multi-stroke pass rule, a retry mechanic, and the guided demo', () => {
     expect(DIFFICULTY_CONFIGS.easy.scoring.requireEveryStrokeToPass).toBe(false);
     expect(DIFFICULTY_CONFIGS.easy.retryThreshold).not.toBeNull();
     expect(DIFFICULTY_CONFIGS.easy.maxStrokeAttempts).toBeGreaterThan(1);
+    expect(DIFFICULTY_CONFIGS.easy.guidedDemo).toBe(true);
   });
 
-  it('gives difficult an every-stroke-must-pass rule and no retry mechanic', () => {
+  it('gives difficult an every-stroke-must-pass rule, no retry mechanic, and no guided demo', () => {
     expect(DIFFICULTY_CONFIGS.difficult.scoring.requireEveryStrokeToPass).toBe(true);
     expect(DIFFICULTY_CONFIGS.difficult.retryThreshold).toBeNull();
     expect(DIFFICULTY_CONFIGS.difficult.maxStrokeAttempts).toBe(1);
+    expect(DIFFICULTY_CONFIGS.difficult.guidedDemo).toBe(false);
   });
 
   it('keeps retryThreshold safely below passThreshold so redos only fire on genuinely weak strokes', () => {

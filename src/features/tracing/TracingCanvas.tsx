@@ -33,9 +33,12 @@ export interface TracingCanvasProps {
   hintText?: string | null;
   /** Forwarded to scoreTrace on release; omit to use the engine's own defaults. */
   scoringOptions?: ScoringOptions;
+  /** While true, all touch input is ignored — e.g. during a guided demo playing on top of the canvas. */
+  disabled?: boolean;
 }
 
-const DEFAULT_VIEW_BOX_SIZE = 300;
+export const DEFAULT_VIEW_BOX_SIZE = 300;
+export const DEFAULT_TRACE_COLOR = '#3478f6';
 
 /**
  * A tracing surface: renders a dashed stencil guide plus the child's in-progress stroke, and
@@ -51,9 +54,10 @@ export function TracingCanvas({
   onComplete,
   completedStrokes = [],
   otherStencilGuides = [],
-  traceColor = '#3478f6',
+  traceColor = DEFAULT_TRACE_COLOR,
   hintText = null,
   scoringOptions,
+  disabled = false,
 }: TracingCanvasProps) {
   const strokePoints = useRef<Point[]>([]);
 
@@ -69,9 +73,25 @@ export function TracingCanvas({
   // The PanResponder below is created exactly once; its gesture handlers read the latest props
   // through this ref (updated via effect, never during render) instead of closing over the props
   // directly, so a long-lived touch gesture never acts on stale values.
-  const latest = useRef({ stencil, size, viewBoxSize, onTracedPointsChange, onComplete, scoringOptions });
+  const latest = useRef({
+    stencil,
+    size,
+    viewBoxSize,
+    onTracedPointsChange,
+    onComplete,
+    scoringOptions,
+    disabled,
+  });
   useEffect(() => {
-    latest.current = { stencil, size, viewBoxSize, onTracedPointsChange, onComplete, scoringOptions };
+    latest.current = {
+      stencil,
+      size,
+      viewBoxSize,
+      onTracedPointsChange,
+      onComplete,
+      scoringOptions,
+      disabled,
+    };
   });
 
   const toStencilSpace = (event: GestureResponderEvent): Point => {
@@ -87,8 +107,8 @@ export function TracingCanvas({
   // eslint-disable-next-line react-hooks/refs
   const [panResponder] = useState(() =>
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => !latest.current.disabled,
+      onMoveShouldSetPanResponder: () => !latest.current.disabled,
       onPanResponderGrant: (event) => {
         strokePoints.current = [toStencilSpace(event)];
         latest.current.onTracedPointsChange(strokePoints.current.slice());

@@ -15,6 +15,8 @@ export interface DifficultyConfig {
   retryThreshold: number | null;
   /** Attempts allowed on one stroke (initial + redos) before it's accepted regardless of score. */
   maxStrokeAttempts: number;
+  /** Whether the trace screen plays an animated arrow demo of the whole character before the child can draw. */
+  guidedDemo: boolean;
 }
 
 export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
@@ -31,6 +33,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     threeStarThreshold: 80,
     retryThreshold: RETRY_THRESHOLD,
     maxStrokeAttempts: 3,
+    guidedDemo: true,
   },
   difficult: {
     scoring: {
@@ -43,5 +46,6 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     threeStarThreshold: 90,
     retryThreshold: null,
     maxStrokeAttempts: 1,
+    guidedDemo: false,
   },
 };
