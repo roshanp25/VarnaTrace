@@ -41,21 +41,28 @@ function pickMessage(passed: boolean): string {
  */
 export function RewardOverlay({ result, accentColor, onRetry, onNext }: RewardOverlayProps) {
   const [scale] = useState(() => new Animated.Value(0.5));
+  const [backdropOpacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     scale.setValue(0.5);
+    backdropOpacity.setValue(0);
     Animated.spring(scale, {
       toValue: 1,
       friction: 4,
       useNativeDriver: true,
     }).start();
-  }, [result, scale]);
+    Animated.timing(backdropOpacity, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [result, scale, backdropOpacity]);
 
   const stars = starsForScore(result.score);
   const message = useMemo(() => pickMessage(result.passed), [result]);
 
   return (
-    <View style={styles.backdrop}>
+    <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
       <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
         <Text style={styles.stars}>{'⭐'.repeat(stars)}</Text>
         <Text style={styles.message}>{message}</Text>
@@ -68,7 +75,7 @@ export function RewardOverlay({ result, accentColor, onRetry, onNext }: RewardOv
           </Pressable>
         </View>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 
