@@ -84,6 +84,20 @@ describe('scoreTrace', () => {
     expect(PASS_THRESHOLD).toBeLessThanOrEqual(100);
   });
 
+  it('honors a custom passThreshold over the default PASS_THRESHOLD', () => {
+    const traced = tracePoints(0, 0, 100, 0, 40).map((p, i) => ({
+      ...p,
+      y: p.y + (i % 2 === 0 ? 3 : -3),
+    }));
+
+    const lenient = scoreTrace(straightLine, traced, { passThreshold: 1 });
+    const strict = scoreTrace(straightLine, traced, { passThreshold: 99 });
+
+    expect(lenient.score).toBe(strict.score);
+    expect(lenient.passed).toBe(true);
+    expect(strict.passed).toBe(false);
+  });
+
   it('always agrees between the rounded score and `passed`', () => {
     // Regression guard: `passed` must be derived from the same rounded score that's returned,
     // not the pre-rounding value — otherwise e.g. a displayed score of 70 could come back

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { PASS_THRESHOLD } from '../../engine';
+import { DEFAULT_DIFFICULTY, Difficulty, DIFFICULTY_CONFIGS } from '../../engine';
 import { Colors } from '../../shared/theme';
 
 /** Both TraceScoreResult and MultiStrokeScoreResult satisfy this — the overlay only needs the final score/pass state, not stroke-level detail. */
@@ -18,14 +18,17 @@ export interface RewardOverlayProps {
   onRetry: () => void;
   /** Advances to the next character. */
   onNext: () => void;
+  /** Must match the difficulty the trace was scored under, so star cutoffs line up. Defaults to DEFAULT_DIFFICULTY. */
+  difficulty?: Difficulty;
 }
 
 const PASSED_MESSAGES = ['Great job!', 'Wonderful tracing!', 'You did it!', 'Super stroke!'];
 const RETRY_MESSAGES = ['Nice try!', 'Almost there!', 'Keep practicing!', 'So close!'];
 
-function starsForScore(score: number): number {
-  if (score >= 90) return 3;
-  if (score >= PASS_THRESHOLD) return 2;
+function starsForScore(score: number, difficulty: Difficulty): number {
+  const config = DIFFICULTY_CONFIGS[difficulty];
+  if (score >= config.threeStarThreshold) return 3;
+  if (score >= config.scoring.passThreshold) return 2;
   return 1;
 }
 
@@ -39,7 +42,13 @@ function pickMessage(passed: boolean): string {
  * No sound yet — that needs an actual audio asset, which doesn't exist until the content step
  * supplies one.
  */
-export function RewardOverlay({ result, accentColor, onRetry, onNext }: RewardOverlayProps) {
+export function RewardOverlay({
+  result,
+  accentColor,
+  onRetry,
+  onNext,
+  difficulty = DEFAULT_DIFFICULTY,
+}: RewardOverlayProps) {
   const [scale] = useState(() => new Animated.Value(0.5));
   const [backdropOpacity] = useState(() => new Animated.Value(0));
 
@@ -58,7 +67,7 @@ export function RewardOverlay({ result, accentColor, onRetry, onNext }: RewardOv
     }).start();
   }, [result, scale, backdropOpacity]);
 
-  const stars = starsForScore(result.score);
+  const stars = starsForScore(result.score, difficulty);
   const message = useMemo(() => pickMessage(result.passed), [result]);
 
   return (

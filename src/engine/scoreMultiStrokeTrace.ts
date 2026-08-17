@@ -1,10 +1,19 @@
-import { ScoringOptions, scoreTrace, TraceScoreResult } from './scoreTrace';
+import { PASS_THRESHOLD, ScoringOptions, scoreTrace, TraceScoreResult } from './scoreTrace';
 import { Point, StencilPath } from './types';
+
+export interface MultiStrokeScoringOptions extends ScoringOptions {
+  /**
+   * When true, every individual stroke must pass — a single off-path stroke fails the whole
+   * character even if the average looks fine. When false (default), only the average across
+   * strokes needs to clear passThreshold.
+   */
+  requireEveryStrokeToPass?: boolean;
+}
 
 export interface MultiStrokeScoreResult {
   /** 0-100, the average of every stroke's score. */
   score: number;
-  /** True only if every individual stroke passed — a single skipped or off-path stroke fails the whole character, even if the average score looks fine. */
+  /** True if the character passed — see MultiStrokeScoringOptions.requireEveryStrokeToPass for which rule decided this. */
   passed: boolean;
   /** Mean distance across strokes that had traced points, or null if none did. */
   averageDistance: number | null;
@@ -14,13 +23,14 @@ export interface MultiStrokeScoreResult {
 
 /**
  * Scores a multi-stroke character by scoring each stroke independently via `scoreTrace` and
- * combining the results: the overall score is the mean of the per-stroke scores, but `passed`
- * requires every stroke to have passed individually (see MultiStrokeScoreResult.passed).
+ * combining the results: the overall score is the mean of the per-stroke scores. `passed` follows
+ * options.requireEveryStrokeToPass — either every stroke must pass individually, or the mean just
+ * needs to clear passThreshold (see MultiStrokeScoringOptions).
  */
 export function scoreMultiStrokeTrace(
   strokes: StencilPath[],
   tracedStrokes: Point[][],
-  options: ScoringOptions = {},
+  options: MultiStrokeScoringOptions = {},
 ): MultiStrokeScoreResult {
   if (strokes.length === 0) {
     throw new Error('scoreMultiStrokeTrace requires at least one stroke');
@@ -34,7 +44,10 @@ export function scoreMultiStrokeTrace(
   const strokeResults = strokes.map((stroke, i) => scoreTrace(stroke, tracedStrokes[i], options));
 
   const score = Math.round(mean(strokeResults.map((r) => r.score)));
-  const passed = strokeResults.every((r) => r.passed);
+  const passThreshold = options.passThreshold ?? PASS_THRESHOLD;
+  const passed = options.requireEveryStrokeToPass
+    ? strokeResults.every((r) => r.passed)
+    : score >= passThreshold;
 
   const distances = strokeResults
     .map((r) => r.averageDistance)

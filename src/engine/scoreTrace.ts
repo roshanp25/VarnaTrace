@@ -8,6 +8,8 @@ export interface ScoringOptions {
   maxDistance?: number;
   /** How many stencil samples of backward movement are tolerated as natural wobble, not a direction violation. */
   directionEpsilonSamples?: number;
+  /** Minimum score for a trace to count as a pass. Defaults to PASS_THRESHOLD. */
+  passThreshold?: number;
 }
 
 export interface TraceScoreResult {
@@ -28,12 +30,19 @@ export interface TraceScoreResult {
  */
 const SAMPLE_COUNT = 300;
 
-const DEFAULT_TOLERANCE = 8;
-const DEFAULT_MAX_DISTANCE = 20;
-const DEFAULT_DIRECTION_EPSILON_SAMPLES = 2;
+const DEFAULT_TOLERANCE = 14;
+const DEFAULT_MAX_DISTANCE = 32;
+const DEFAULT_DIRECTION_EPSILON_SAMPLES = 6;
 
 /** Minimum score for a trace to count as a pass, shared with the UI so both agree on "good enough". */
-export const PASS_THRESHOLD = 70;
+export const PASS_THRESHOLD = 55;
+
+/**
+ * Below this, a stroke is considered bad enough that the tracing UI offers a silent redo rather
+ * than accepting it outright. Deliberately well under PASS_THRESHOLD so redos trigger only on
+ * genuinely off strokes, not near-misses.
+ */
+export const RETRY_THRESHOLD = 40;
 
 export function scoreTrace(
   stencil: StencilPath,
@@ -44,6 +53,7 @@ export function scoreTrace(
   const maxDistance = options.maxDistance ?? DEFAULT_MAX_DISTANCE;
   const directionEpsilonSamples =
     options.directionEpsilonSamples ?? DEFAULT_DIRECTION_EPSILON_SAMPLES;
+  const passThreshold = options.passThreshold ?? PASS_THRESHOLD;
 
   const samples = resamplePathByArcLength(stencil, SAMPLE_COUNT);
 
@@ -71,7 +81,7 @@ export function scoreTrace(
     score,
     averageDistance: Math.round(averageDistance * 100) / 100,
     coveragePercent: Math.round(coveragePercent),
-    passed: score >= PASS_THRESHOLD,
+    passed: score >= passThreshold,
   };
 }
 

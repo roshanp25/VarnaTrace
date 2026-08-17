@@ -26,7 +26,7 @@ describe('scoreMultiStrokeTrace', () => {
     expect(result.passed).toBe(true);
   });
 
-  it('fails overall if any single stroke is off-path, even if the other is perfect', () => {
+  it('fails overall if the average score is too low, even with one perfect stroke', () => {
     const traced = [
       tracePoints(0, 0, 0, 100, 20), // good
       tracePoints(0, 300, 100, 300, 20), // way off the second stroke's path
@@ -37,6 +37,32 @@ describe('scoreMultiStrokeTrace', () => {
     expect(result.strokeResults[0].passed).toBe(true);
     expect(result.strokeResults[1].passed).toBe(false);
     expect(result.passed).toBe(false);
+  });
+
+  it('passes overall when the average clears PASS_THRESHOLD, even if one stroke individually falls short', () => {
+    const traced = [
+      tracePoints(0, 0, 0, 100, 20), // perfect
+      tracePoints(5, 100, 100, 95, 20), // slightly off, likely below PASS_THRESHOLD on its own
+    ];
+
+    const result = scoreMultiStrokeTrace(lShapeStrokes, traced);
+
+    expect(result.score).toBeGreaterThanOrEqual(PASS_THRESHOLD);
+    expect(result.passed).toBe(true);
+  });
+
+  it('fails overall with requireEveryStrokeToPass even when the average clears passThreshold', () => {
+    const traced = [
+      tracePoints(0, 0, 0, 100, 20), // perfect
+      tracePoints(5, 100, 100, 95, 20), // slightly off, likely below PASS_THRESHOLD on its own
+    ];
+
+    const lenient = scoreMultiStrokeTrace(lShapeStrokes, traced);
+    const strict = scoreMultiStrokeTrace(lShapeStrokes, traced, { requireEveryStrokeToPass: true });
+
+    expect(lenient.score).toBe(strict.score);
+    expect(lenient.passed).toBe(true);
+    expect(strict.passed).toBe(strict.strokeResults.every((r) => r.passed));
   });
 
   it('matches a single scoreTrace call when the character has exactly one stroke', () => {

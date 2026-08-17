@@ -2,7 +2,7 @@
 
 Status: **DRAFT — awaiting formal review**, but implementation has proceeded past several open
 decisions below via direct confirmation during build sessions — see Section 0.
-Last updated: 2026-08-13
+Last updated: 2026-08-16
 
 App Store listing:
 - App Name: **VarnaTrace: English & Hindi** (27 chars)
@@ -19,7 +19,7 @@ requirements source of truth, but may describe things not built yet.
 ### Done
 1. **Project scaffolding** — Expo + TypeScript, repo/folder structure per Section 4 (`src/engine`, `src/features`, `src/content`, `src/services`).
 2. **Storage abstraction** — `src/services/storage/{StorageService.ts,AsyncStorageService.ts}`. Defined and tested, but **not yet consumed by any feature** — nothing needs persistence until gating/parental-gate exist.
-3. **Scoring engine (test-first)** — `src/engine/`: `scoreTrace.ts` (single stroke: accuracy + coverage + direction) and `scoreMultiStrokeTrace.ts` (multi-stroke; a character only "passes" if *every* stroke individually passes). Fully unit-tested, zero UI dependencies, per Section 4.
+3. **Scoring engine (test-first)** — `src/engine/`: `scoreTrace.ts` (single stroke: accuracy + coverage + direction) and `scoreMultiStrokeTrace.ts` (multi-stroke, averages per-stroke scores; whether the character then requires every stroke to individually pass or just the average to clear the threshold is now a difficulty setting — see item 22). Fully unit-tested, zero UI dependencies, per Section 4.
 4. **Tracing UI** — `src/features/tracing/`: `TracingCanvas.tsx` (single-stroke SVG canvas, touch + Apple Pencil via `PanResponder`), `MultiStrokeTracingCanvas.tsx` (sequences a character's strokes one at a time), `RewardOverlay.tsx`. Wired into `App.tsx`, which is currently a flat debug-style screen (character picker + canvas) — **not** the real app shell/navigation.
 5. **CI** — `.github/workflows/ci.yml` runs typecheck + lint + test on every push/PR.
 6. **Content data — all three scripts are now complete (49/49 Hindi, 26/26 English, 50/50 numbers):**
@@ -206,7 +206,39 @@ requirements source of truth, but may describe things not built yet.
       all and Subscribe stays correctly disabled rather than doing something with no plan
       selected — verified in-browser, no errors, no crash.
 
-**Verified working state as of last check:** typecheck clean, lint clean, 685 tests passing across 13 suites (adds `planForPackageType`). Manually walked through in-browser again after the plan-picker change: full locked-tile → parental gate → paywall flow, Subscribe correctly disabled with zero plans (the web stub), no console errors, no bundling errors. **Not verified anywhere in this environment:** any actual native RevenueCat behavior, including whether the plan picker actually shows real Monthly/Yearly prices — that needs a Dev Client/EAS build on a real device.
+22. **Easy/Hard difficulty modes (2026-08-16)** — the scoring engine's leniency (point-to-stencil
+    tolerance, max distance, direction-wobble tolerance, pass threshold, 3-star threshold, and the
+    multi-stroke pass rule) is now driven by a `Difficulty` setting instead of hardcoded constants,
+    plus a new silent-redo mechanic for weak strokes. `src/engine/difficulty.ts` defines
+    `DIFFICULTY_CONFIGS`: **easy** (tolerance 14, maxDistance 32, direction-epsilon 6, pass
+    threshold 55, 3★ at 80, character passes if the *average* score across strokes clears the
+    threshold) and **difficult** (8/20/2/70, 3★ at 90, *every* stroke must individually pass — the
+    original behavior, now the non-default option). `scoreTrace`/`scoreMultiStrokeTrace` gained
+    `passThreshold`/`requireEveryStrokeToPass` options so difficulty threads through as data, not a
+    global constant.
+    - **Retry mechanic (easy only):** a stroke scoring below `RETRY_THRESHOLD` (40) gets silently
+      discarded and redrawn instead of failing outright — no popup, just a "Try again!" pill that
+      fades in on `TracingCanvas` for ~1s. Capped at 3 total attempts per stroke (`maxStrokeAttempts`
+      in the config), after which whatever score it gets is accepted. Difficult mode sets
+      `retryThreshold: null`, disabling this entirely (`maxStrokeAttempts: 1`).
+    - **UI:** `TracingScreen` owns an Easy/Hard toggle rendered above the canvas, threaded into
+      `MultiStrokeTracingCanvas` (which resolves the config once at mount — same "captured once,
+      remount via `key` to pick up a change" pattern already used for the `strokes` prop) and
+      `RewardOverlay` (for star cutoffs). **Deliberately not persisted** — no settings/profile
+      screen or global state store exists anywhere in this app yet (confirmed by exploring the
+      codebase before building this), so difficulty resets to `DEFAULT_DIFFICULTY` (`'easy'`) every
+      time the trace screen mounts. Revisit if/when a real settings surface gets built.
+    - Also fixed the reward card's backdrop appearing with an instant cut instead of fading in
+      (`RewardOverlay`, `Animated.timing` on opacity) — unrelated polish bundled in the same session.
+
+**Verified working state as of last check:** typecheck clean, lint clean, engine suite green
+(`scoreTrace`, `scoreMultiStrokeTrace`, `difficulty`, 3 new tests for the new options/config).
+Manually walked through the Easy/Hard toggle in-browser: default is Easy, tapping Hard flips the
+active pill, no console errors. **Not verified in this environment:** the retry mechanic's actual
+feel on a real touch/Pencil trace (needs a device — browser mouse-drag wasn't used to simulate a
+weak stroke). Two pre-existing, unrelated test failures exist in
+`src/content/__tests__/` (a stale snapshot and a content-data assertion) — confirmed present before
+this session's changes too, not touched here.
 
 ### Not started
 - **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21 has been exercised on an actual device yet. The dashboard is now correctly configured (entitlement `premium`, Monthly/Yearly products attached, single offering marked current) as far as could be checked from screenshots — first real proof this all actually works is a device build.

@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { getCharacterById, getCharactersByScript } from '../../content';
-import { MultiStrokeScoreResult } from '../../engine';
+import { DEFAULT_DIFFICULTY, Difficulty, MultiStrokeScoreResult } from '../../engine';
 import { fontFamilyForScript } from '../../shared/fonts';
 import { Colors, getCategoryColors } from '../../shared/theme';
 import { markCharacterCompleted } from '../progress/progressService';
@@ -30,6 +30,8 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
   // Bumped to force MultiStrokeTracingCanvas to remount and restart from stroke 1 on "Clear",
   // since it owns its own stroke-sequencing state (not lifted here).
   const [canvasKey, setCanvasKey] = useState(0);
+  // Per-session only — not persisted, resets to DEFAULT_DIFFICULTY each time this screen mounts.
+  const [difficulty, setDifficulty] = useState<Difficulty>(DEFAULT_DIFFICULTY);
 
   if (!character) {
     return null;
@@ -40,6 +42,14 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
   const reset = () => {
     setResult(null);
     setCanvasKey((key) => key + 1);
+  };
+
+  const handleDifficultyChange = (next: Difficulty) => {
+    if (next === difficulty) {
+      return;
+    }
+    setDifficulty(next);
+    reset();
   };
 
   const handleComplete = (completed: MultiStrokeScoreResult) => {
@@ -71,6 +81,28 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
         {character.displayLabel}
       </Text>
 
+      <View style={styles.difficultyToggle}>
+        {(['easy', 'difficult'] as const).map((mode) => (
+          <Pressable
+            key={mode}
+            style={[
+              styles.difficultyButton,
+              difficulty === mode && { backgroundColor: categoryColors.fill },
+            ]}
+            onPress={() => handleDifficultyChange(mode)}
+          >
+            <Text
+              style={[
+                styles.difficultyButtonText,
+                difficulty === mode && styles.difficultyButtonTextActive,
+              ]}
+            >
+              {mode === 'easy' ? 'Easy' : 'Hard'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       {activeStroke.total > 1 && (
         <View style={styles.dots}>
           {Array.from({ length: activeStroke.total }).map((_, i) => (
@@ -100,6 +132,7 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
           traceColor={categoryColors.fill}
           onStrokeIndexChange={(index, total) => setActiveStroke({ index, total })}
           onComplete={handleComplete}
+          difficulty={difficulty}
         />
       </View>
 
@@ -118,6 +151,7 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
           accentColor={categoryColors.ink}
           onRetry={reset}
           onNext={handleNext}
+          difficulty={difficulty}
         />
       )}
     </View>
@@ -135,6 +169,27 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 12,
+  },
+  difficultyToggle: {
+    flexDirection: 'row',
+    gap: 4,
+    backgroundColor: Colors.neutralBg,
+    borderRadius: 999,
+    padding: 4,
+    marginBottom: 12,
+  },
+  difficultyButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+  },
+  difficultyButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.neutralText,
+  },
+  difficultyButtonTextActive: {
+    color: Colors.paper,
   },
   dots: {
     flexDirection: 'row',

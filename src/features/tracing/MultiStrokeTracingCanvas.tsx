@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { MultiStrokeScoreResult, Point, scoreMultiStrokeTrace, StencilPath } from '../../engine';
+import {
+  DEFAULT_DIFFICULTY,
+  Difficulty,
+  DIFFICULTY_CONFIGS,
+  MultiStrokeScoreResult,
+  Point,
+  scoreMultiStrokeTrace,
+  StencilPath,
+  TraceScoreResult,
+} from '../../engine';
 
 import { TracingCanvas } from './TracingCanvas';
 
@@ -16,7 +25,15 @@ export interface MultiStrokeTracingCanvasProps {
   traceColor?: string;
   /** Notified whenever the active stroke changes, for progress UI outside the canvas. */
   onStrokeIndexChange?: (index: number, total: number) => void;
+  /** Governs scoring leniency and the retry mechanic — see DIFFICULTY_CONFIGS. Defaults to DEFAULT_DIFFICULTY. */
+  difficulty?: Difficulty;
 }
+
+/** Shown briefly over the canvas when a weak stroke triggers a silent redo instead of a hard failure. */
+const RETRY_HINT_TEXT = 'Try again!';
+
+/** How long the retry hint stays visible before fading out, in ms. */
+const RETRY_HINT_DURATION_MS = 1000;
 
 /**
  * Sequences a child through a character's strokes one at a time, using TracingCanvas as the
@@ -36,10 +53,14 @@ export function MultiStrokeTracingCanvas({
   onComplete,
   traceColor,
   onStrokeIndexChange,
+  difficulty = DEFAULT_DIFFICULTY,
 }: MultiStrokeTracingCanvasProps) {
+  const config = DIFFICULTY_CONFIGS[difficulty];
+
   const [strokeIndex, setStrokeIndex] = useState(0);
   const [completedStrokes, setCompletedStrokes] = useState<Point[][]>([]);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
+  const [hintText, setHintText] = useState<string | null>(null);
 
   useEffect(() => {
     onStrokeIndexChange?.(strokeIndex, strokes.length);
@@ -55,6 +76,16 @@ export function MultiStrokeTracingCanvas({
   const currentPointsRef = useRef<Point[]>([]);
   const completedStrokesRef = useRef<Point[][]>([]);
   const strokeIndexRef = useRef(0);
+  const strokeAttemptsRef = useRef(0);
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+      }
+    };
+  }, []);
 
   const latestOnComplete = useRef(onComplete);
   useEffect(() => {
@@ -68,7 +99,23 @@ export function MultiStrokeTracingCanvas({
 
   // This function is only ever invoked later, from a real touch-release event, never
   // synchronously during render (see TracingCanvas's identical rationale for the same pattern).
-  const [handleStrokeComplete] = useState(() => () => {
+  const [handleStrokeComplete] = useState(() => (result: TraceScoreResult) => {
+    const attemptsRemain = strokeAttemptsRef.current + 1 < config.maxStrokeAttempts;
+    if (config.retryThreshold !== null && result.score < config.retryThreshold && attemptsRemain) {
+      // Weak stroke, tries left: let the child redraw the same stroke instead of baking in a bad
+      // score or interrupting with a popup. Nudge with a brief, non-blocking hint.
+      strokeAttemptsRef.current += 1;
+      currentPointsRef.current = [];
+      setCurrentPoints([]);
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+      }
+      setHintText(RETRY_HINT_TEXT);
+      hintTimerRef.current = setTimeout(() => setHintText(null), RETRY_HINT_DURATION_MS);
+      return;
+    }
+
+    strokeAttemptsRef.current = 0;
     const updatedStrokes = [...completedStrokesRef.current, currentPointsRef.current];
     completedStrokesRef.current = updatedStrokes;
     currentPointsRef.current = [];
@@ -79,7 +126,7 @@ export function MultiStrokeTracingCanvas({
       strokeIndexRef.current += 1;
       setStrokeIndex(strokeIndexRef.current);
     } else {
-      latestOnComplete.current(scoreMultiStrokeTrace(strokes, updatedStrokes));
+      latestOnComplete.current(scoreMultiStrokeTrace(strokes, updatedStrokes, config.scoring));
     }
   });
 
@@ -96,6 +143,8 @@ export function MultiStrokeTracingCanvas({
       completedStrokes={completedStrokes}
       otherStencilGuides={otherStencilGuides}
       traceColor={traceColor}
+      hintText={hintText}
+      scoringOptions={config.scoring}
     />
   );
 }

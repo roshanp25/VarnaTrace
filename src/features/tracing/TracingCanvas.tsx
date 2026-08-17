@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GestureResponderEvent, PanResponder, View } from 'react-native';
+import { Animated, GestureResponderEvent, PanResponder, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
-import { Point, scoreTrace, StencilPath, TraceScoreResult } from '../../engine';
+import { Point, ScoringOptions, scoreTrace, StencilPath, TraceScoreResult } from '../../engine';
 import { Colors } from '../../shared/theme';
 
 import { pointsToSvgPath } from './svgPath';
@@ -25,6 +25,14 @@ export interface TracingCanvasProps {
   otherStencilGuides?: StencilPath[];
   /** Color of the child's drawn line and completed strokes. */
   traceColor?: string;
+  /**
+   * Brief encouraging text to fade in over the canvas, e.g. after a weak stroke triggers a
+   * silent redo. Not a modal — renders non-interactively over the drawing surface and never
+   * blocks input; the caller controls how long it stays visible by clearing it back to null.
+   */
+  hintText?: string | null;
+  /** Forwarded to scoreTrace on release; omit to use the engine's own defaults. */
+  scoringOptions?: ScoringOptions;
 }
 
 const DEFAULT_VIEW_BOX_SIZE = 300;
@@ -44,15 +52,26 @@ export function TracingCanvas({
   completedStrokes = [],
   otherStencilGuides = [],
   traceColor = '#3478f6',
+  hintText = null,
+  scoringOptions,
 }: TracingCanvasProps) {
   const strokePoints = useRef<Point[]>([]);
+
+  const [hintOpacity] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    Animated.timing(hintOpacity, {
+      toValue: hintText ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [hintText, hintOpacity]);
 
   // The PanResponder below is created exactly once; its gesture handlers read the latest props
   // through this ref (updated via effect, never during render) instead of closing over the props
   // directly, so a long-lived touch gesture never acts on stale values.
-  const latest = useRef({ stencil, size, viewBoxSize, onTracedPointsChange, onComplete });
+  const latest = useRef({ stencil, size, viewBoxSize, onTracedPointsChange, onComplete, scoringOptions });
   useEffect(() => {
-    latest.current = { stencil, size, viewBoxSize, onTracedPointsChange, onComplete };
+    latest.current = { stencil, size, viewBoxSize, onTracedPointsChange, onComplete, scoringOptions };
   });
 
   const toStencilSpace = (event: GestureResponderEvent): Point => {
@@ -79,7 +98,11 @@ export function TracingCanvas({
         latest.current.onTracedPointsChange(strokePoints.current.slice());
       },
       onPanResponderRelease: () => {
-        const result = scoreTrace(latest.current.stencil, strokePoints.current);
+        const result = scoreTrace(
+          latest.current.stencil,
+          strokePoints.current,
+          latest.current.scoringOptions,
+        );
         latest.current.onComplete(result);
       },
     }),
@@ -157,6 +180,29 @@ export function TracingCanvas({
           <Circle cx={stencil[0].x} cy={stencil[0].y} r={viewBoxSize * 0.025} fill={Colors.numbers} />
         )}
       </Svg>
+      {hintText && (
+        <Animated.View style={[styles.hintPill, { opacity: hintOpacity }]}>
+          <Text style={styles.hintPillText}>{hintText}</Text>
+        </Animated.View>
+      )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  hintPill: {
+    position: 'absolute',
+    top: 8,
+    alignSelf: 'center',
+    backgroundColor: Colors.ink,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 999,
+    pointerEvents: 'none',
+  },
+  hintPillText: {
+    color: Colors.paper,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+});
