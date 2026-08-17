@@ -51,7 +51,10 @@ const RETRY_HINT_DURATION_MS = 1000;
  * When `difficulty`'s config enables `guidedDemo`, an animated arrow (TraceDemo) plays over the
  * canvas on mount, tracing every stroke in order before the underlying TracingCanvas accepts
  * touch input (`disabled` while the demo runs). Remounting (the same `key` mechanism above)
- * replays it — there's no separate imperative "replay" API.
+ * replays it — there's no separate imperative "replay" API. The same TraceDemo also gets
+ * re-triggered mid-character, for just the current stroke, if a retried attempt scores below
+ * `missDemoThreshold` — a plain "Try again!" pill covers a merely imprecise attempt, but a
+ * genuine miss gets the stronger visual reminder instead (see handleStrokeComplete).
  */
 export function MultiStrokeTracingCanvas({
   strokes,
@@ -70,9 +73,13 @@ export function MultiStrokeTracingCanvas({
   const [completedStrokes, setCompletedStrokes] = useState<Point[][]>([]);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
   const [hintText, setHintText] = useState<string | null>(null);
-  // Plays once per mount when the difficulty enables it — callers wanting a replay (e.g. a "show
-  // me again" button) remount this component via a changing `key`, same as switching characters.
-  const [demoPlaying, setDemoPlaying] = useState(config.guidedDemo);
+  // Non-null strokes TraceDemo is currently animating: the whole character on mount (when the
+  // difficulty enables it — callers wanting a full replay, e.g. a "show me again" button, remount
+  // this component via a changing `key`, same as switching characters), or just the current
+  // stroke when a miss triggers a targeted replay (see handleStrokeComplete below).
+  const [demoStrokes, setDemoStrokes] = useState<StencilPath[] | null>(
+    config.guidedDemo ? strokes : null,
+  );
 
   useEffect(() => {
     onStrokeIndexChange?.(strokeIndex, strokes.length);
@@ -115,15 +122,24 @@ export function MultiStrokeTracingCanvas({
     const attemptsRemain = strokeAttemptsRef.current + 1 < config.maxStrokeAttempts;
     if (config.retryThreshold !== null && result.score < config.retryThreshold && attemptsRemain) {
       // Weak stroke, tries left: let the child redraw the same stroke instead of baking in a bad
-      // score or interrupting with a popup. Nudge with a brief, non-blocking hint.
+      // score or interrupting with a popup.
       strokeAttemptsRef.current += 1;
       currentPointsRef.current = [];
       setCurrentPoints([]);
-      if (hintTimerRef.current) {
-        clearTimeout(hintTimerRef.current);
+
+      if (config.missDemoThreshold !== null && result.score < config.missDemoThreshold) {
+        // Not just imprecise — read as a genuine miss (traced far from the stencil). A pill isn't
+        // enough here, so replay the guided arrow for just this one stroke before letting them
+        // try again.
+        setDemoStrokes([strokes[strokeIndexRef.current]]);
+      } else {
+        // Merely weak: nudge with a brief, non-blocking hint instead.
+        if (hintTimerRef.current) {
+          clearTimeout(hintTimerRef.current);
+        }
+        setHintText(RETRY_HINT_TEXT);
+        hintTimerRef.current = setTimeout(() => setHintText(null), RETRY_HINT_DURATION_MS);
       }
-      setHintText(RETRY_HINT_TEXT);
-      hintTimerRef.current = setTimeout(() => setHintText(null), RETRY_HINT_DURATION_MS);
       return;
     }
 
@@ -158,15 +174,15 @@ export function MultiStrokeTracingCanvas({
         traceColor={traceColor}
         hintText={hintText}
         scoringOptions={config.scoring}
-        disabled={demoPlaying}
+        disabled={demoStrokes !== null}
       />
-      {demoPlaying && (
+      {demoStrokes && (
         <TraceDemo
-          strokes={strokes}
+          strokes={demoStrokes}
           size={size}
           viewBoxSize={resolvedViewBoxSize}
           color={resolvedTraceColor}
-          onComplete={() => setDemoPlaying(false)}
+          onComplete={() => setDemoStrokes(null)}
         />
       )}
     </View>

@@ -30,4 +30,11 @@ describe('DIFFICULTY_CONFIGS', () => {
     expect(easy.retryThreshold).not.toBeNull();
     expect(easy.retryThreshold as number).toBeLessThan(easy.scoring.passThreshold);
   });
+
+  it('gives easy a missDemoThreshold well below retryThreshold, and difficult none at all', () => {
+    const { easy, difficult } = DIFFICULTY_CONFIGS;
+    expect(easy.missDemoThreshold).not.toBeNull();
+    expect(easy.missDemoThreshold as number).toBeLessThan(easy.retryThreshold as number);
+    expect(difficult.missDemoThreshold).toBeNull();
+  });
 });

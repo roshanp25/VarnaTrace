@@ -1,5 +1,5 @@
 import { MultiStrokeScoringOptions } from './scoreMultiStrokeTrace';
-import { PASS_THRESHOLD, RETRY_THRESHOLD } from './scoreTrace';
+import { MISS_THRESHOLD, PASS_THRESHOLD, RETRY_THRESHOLD } from './scoreTrace';
 
 export type Difficulty = 'easy' | 'difficult';
 
@@ -17,6 +17,12 @@ export interface DifficultyConfig {
   maxStrokeAttempts: number;
   /** Whether the trace screen plays an animated arrow demo of the whole character before the child can draw. */
   guidedDemo: boolean;
+  /**
+   * Below this, a retried stroke gets a single-stroke guided-arrow replay instead of the plain
+   * "Try again!" pill — reserved for a genuine miss, not just an imprecise attempt. Null when
+   * `guidedDemo` is false (no demo to replay) or the mode has no retry mechanic at all.
+   */
+  missDemoThreshold: number | null;
 }
 
 export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
@@ -34,6 +40,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     retryThreshold: RETRY_THRESHOLD,
     maxStrokeAttempts: 3,
     guidedDemo: true,
+    missDemoThreshold: MISS_THRESHOLD,
   },
   difficult: {
     scoring: {
@@ -47,5 +54,6 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     retryThreshold: null,
     maxStrokeAttempts: 1,
     guidedDemo: false,
+    missDemoThreshold: null,
   },
 };

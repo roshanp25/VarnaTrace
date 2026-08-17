@@ -44,6 +44,14 @@ export const PASS_THRESHOLD = 55;
  */
 export const RETRY_THRESHOLD = 40;
 
+/**
+ * Below this, a stroke isn't just weak — it reads as a genuine miss (traced far from the stencil
+ * with little to no coverage). Deliberately well under RETRY_THRESHOLD, so only a real "drew
+ * somewhere else" attempt gets the stronger single-stroke demo replay instead of the lightweight
+ * "Try again!" pill every other retry gets.
+ */
+export const MISS_THRESHOLD = 15;
+
 export function scoreTrace(
   stencil: StencilPath,
   traced: Point[],

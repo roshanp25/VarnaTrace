@@ -1,4 +1,4 @@
-export { PASS_THRESHOLD, RETRY_THRESHOLD, scoreTrace } from './scoreTrace';
+export { MISS_THRESHOLD, PASS_THRESHOLD, RETRY_THRESHOLD, scoreTrace } from './scoreTrace';
 export type { ScoringOptions, TraceScoreResult } from './scoreTrace';
 export { scoreMultiStrokeTrace } from './scoreMultiStrokeTrace';
 export type { MultiStrokeScoreResult, MultiStrokeScoringOptions } from './scoreMultiStrokeTrace';
