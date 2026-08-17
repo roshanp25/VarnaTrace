@@ -1,5 +1,6 @@
 import { notConfiguredSubscriptionService } from './notConfiguredSubscriptionService';
 import { SubscriptionService } from './SubscriptionService';
+import { withDevPaywallBypass } from './devPaywallBypass';
 
 export type {
   SubscriptionService,
@@ -14,4 +15,6 @@ export type {
  * react-native-purchases is a native module with no web implementation, so web intentionally keeps
  * using this fail-closed stub rather than ever importing it.
  */
-export const subscriptionService: SubscriptionService = notConfiguredSubscriptionService;
+export const subscriptionService: SubscriptionService = withDevPaywallBypass(
+  notConfiguredSubscriptionService,
+);

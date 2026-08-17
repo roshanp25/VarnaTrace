@@ -1,5 +1,6 @@
 import { revenueCatSubscriptionService } from './revenueCatSubscriptionService.native';
 import { SubscriptionService } from './SubscriptionService';
+import { withDevPaywallBypass } from './devPaywallBypass';
 
 export type {
   SubscriptionService,
@@ -13,4 +14,6 @@ export type {
  * extension — no manual Platform.OS branching needed. ./index.ts (no such extension) remains the
  * file web resolves to, and never imports react-native-purchases.
  */
-export const subscriptionService: SubscriptionService = revenueCatSubscriptionService;
+export const subscriptionService: SubscriptionService = withDevPaywallBypass(
+  revenueCatSubscriptionService,
+);
