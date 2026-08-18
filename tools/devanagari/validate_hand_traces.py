@@ -7,6 +7,16 @@ Does not modify anything. For every character, flags:
   - degenerate strokes (fewer than 2 points, or a stroke that's a single repeated point).
   - non-finite or out-of-canvas coordinates (outside roughly [0, 1200]).
 
+A flagged "zero-length duplicate point" is NOT automatically a mistake: if it's the *entire*
+stroke (every point identical), that's almost certainly a genuine single-tap "dot" mark —
+anusvara (ं), visarga (ः, which is two such strokes), a nuqta, etc. — not an accidental
+double-tap. `src/content/handTracedStrokes.ts`'s `normalizeHandTracedStroke` already treats a
+whole-stroke duplicate as an intentional dot and preserves it (as a 2-point zero-length segment,
+which the app renders as an actual dot and scores as a tap target) rather than deleting it. Only
+an isolated zero-length point *within* an otherwise-normal longer stroke is the original
+accidental-double-tap case this check was written for — that one really is noise to re-trace or
+manually clean up.
+
 Usage:
     python tools/devanagari/validate_hand_traces.py
 """

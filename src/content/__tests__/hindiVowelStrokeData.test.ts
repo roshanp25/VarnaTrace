@@ -33,8 +33,18 @@ describe('stroke geometry validity', () => {
         }
       });
 
-      it('has no zero-length (immediately-duplicate) consecutive points', () => {
+      it('has no zero-length (immediately-duplicate) consecutive points, except a genuine 2-point dot stroke', () => {
         for (const stroke of character.strokes) {
+          // A whole stroke of exactly 2 identical points is a real single-tap "dot" mark
+          // (anusvara, visarga, a nuqta, etc.) preserved intentionally by
+          // normalizeHandTracedStroke — not the duplicate-point pipeline defect this check
+          // guards against. A duplicate anywhere else (within a longer stroke, or a run of 3+
+          // identical points) still isn't valid.
+          const isDotStroke =
+            stroke.length === 2 && stroke[0].x === stroke[1].x && stroke[0].y === stroke[1].y;
+          if (isDotStroke) {
+            continue;
+          }
           for (let i = 1; i < stroke.length; i++) {
             const dx = stroke[i].x - stroke[i - 1].x;
             const dy = stroke[i].y - stroke[i - 1].y;

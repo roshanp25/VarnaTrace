@@ -30,8 +30,18 @@ const handTracedStrokesRaw: HandTracedStrokeData = {
 
 /**
  * Scales one hand-traced stroke from the tracer tool's 1200x1200 canvas into `viewBoxSize`,
- * dropping any exact-duplicate consecutive point (an accidental double-tap in the tracer produces
- * a zero-length segment, which the app's content schema treats as invalid).
+ * dropping exact-duplicate consecutive points (an accidental double-tap mid-stroke in the tracer
+ * produces a zero-length segment that's just noise once real movement exists elsewhere in the
+ * stroke).
+ *
+ * If deduping would leave fewer than 2 points, the stroke wasn't an accidental double-tap — it was
+ * a genuine single-tap "dot" mark (anusvara ं, visarga ः, a nuqta, etc., authored as one tap with
+ * no drag). Those are normalized to an explicit zero-length 2-point segment instead of being
+ * collapsed further, because the rest of the app requires >=2 points per stroke: react-native-svg
+ * renders a zero-length path with `strokeLinecap="round"` as a round dot (so it's actually visible,
+ * unlike a bare 1-point path, which draws nothing), and `resamplePathByArcLength` already has a
+ * dedicated zero-length branch that returns N copies of the single point (so scoring/the guided
+ * demo arrow both work — a 1-point path would throw there instead).
  */
 export function normalizeHandTracedStroke(
   points: [number, number][],
@@ -42,7 +52,8 @@ export function normalizeHandTracedStroke(
   const deduped = points.filter(
     (p, i) => i === 0 || p[0] !== points[i - 1][0] || p[1] !== points[i - 1][1],
   );
-  return deduped.map(([x, y]) => ({ x: x * scale, y: y * scale }));
+  const normalized = deduped.length >= 2 ? deduped : [points[0], points[0]];
+  return normalized.map(([x, y]) => ({ x: x * scale, y: y * scale }));
 }
 
 /**

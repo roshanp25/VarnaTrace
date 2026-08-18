@@ -17,7 +17,10 @@ describe('normalizeHandTracedStroke', () => {
   });
 
   it('respects a custom source canvas size', () => {
-    expect(normalizeHandTracedStroke([[100, 100]], 300, 1000)).toEqual([{ x: 30, y: 30 }]);
+    expect(normalizeHandTracedStroke([[100, 100]], 300, 1000)).toEqual([
+      { x: 30, y: 30 },
+      { x: 30, y: 30 },
+    ]);
   });
 
   it('drops an exact-duplicate consecutive point (e.g. an accidental double-tap)', () => {
@@ -32,6 +35,18 @@ describe('normalizeHandTracedStroke', () => {
       { x: 0, y: 0 },
       { x: 150, y: 150 },
       { x: 300, y: 0 },
+    ]);
+  });
+
+  it('preserves a genuine single-tap "dot" stroke (e.g. anusvara/visarga/nuqta) as a zero-length 2-point segment, instead of collapsing it to an unrenderable single point', () => {
+    const points: [number, number][] = [
+      [799, 168],
+      [799, 168],
+    ];
+
+    expect(normalizeHandTracedStroke(points, 300)).toEqual([
+      { x: 199.75, y: 42 },
+      { x: 199.75, y: 42 },
     ]);
   });
 });

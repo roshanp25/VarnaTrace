@@ -102,9 +102,22 @@ before/after if you want a worked example.
 - `normalizeHandTracedStroke(points, viewBoxSize)` — scales a stroke from the tracer's fixed
   1200×1200 canvas to the app's 0–300 stencil space (`TracingCanvas`'s `DEFAULT_VIEW_BOX_SIZE`), a
   plain uniform scale (no re-centering — every character was traced over the same centered guide,
-  so none is needed). Also strips exact-duplicate consecutive points (an accidental double-tap
-  produces a zero-length segment, which the schema treats as invalid — this happened once, in अः,
-  and is now handled automatically rather than requiring a source-file edit).
+  so none is needed). Also strips exact-duplicate consecutive points *within* a longer stroke (an
+  accidental double-tap mid-stroke produces a zero-length segment that's just noise once real
+  movement exists elsewhere in the stroke).
+  **Correction (2026-08-18):** an earlier version of this doc described अः's degenerate stroke as
+  an "accidental double-tap" that got silently dropped down to a single point. That was wrong —
+  visarga (ः) is literally two dots, and अं (anusvara) and ङ (which carries a nuqta) have the same
+  shape: a genuine single-tap "dot" mark, authored as two identical points because the tracer tool
+  requires a down+up to register a stroke at all. Deduping that all the way down to one point broke
+  two things: `pointsToSvgPath` draws nothing for a single point (the dot was invisible), and
+  `resamplePathByArcLength` throws for a stencil under 2 points (scoring, or the guided demo
+  reaching that stroke, crashed). Fixed by having `normalizeHandTracedStroke` preserve a
+  whole-stroke duplicate as an explicit 2-point zero-length segment instead of collapsing it
+  further, and having `TracingCanvas` render such a stroke as an actual `Circle` (see
+  `isDotStroke`/`StrokeShape` in `src/features/tracing/svgPath.ts`/`TracingCanvas.tsx`) rather than
+  relying on `pointsToSvgPath`. Confirmed via the raw data that exactly 4 strokes across the whole
+  character set have this shape: अं (1), अः (2 — its two dots), ङ (1).
 - `applyHandTracedStrokes(characters, viewBoxSize)` — for every Hindi character, looks up
   `raw[character.displayLabel]` across the merged vowels+consonants data; if found and non-empty,
   overrides that character's `strokes` (and `note`) at runtime. No entry → character is returned

@@ -5,7 +5,7 @@ import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { Point, ScoringOptions, scoreTrace, StencilPath, TraceScoreResult } from '../../engine';
 import { Colors } from '../../shared/theme';
 
-import { pointsToSvgPath } from './svgPath';
+import { isDotStroke, pointsToSvgPath } from './svgPath';
 
 export interface TracingCanvasProps {
   /** The reference path to trace, in the coordinate space defined by `viewBoxSize`. */
@@ -35,10 +35,50 @@ export interface TracingCanvasProps {
   scoringOptions?: ScoringOptions;
   /** While true, all touch input is ignored — e.g. during a guided demo playing on top of the canvas. */
   disabled?: boolean;
+  /**
+   * Multiplies the rendered guide/trace line width — purely visual, does not affect scoring.
+   * Lets a difficulty mode's surface look (and feel) more forgiving without loosening what
+   * actually passes. Defaults to 1 (no change).
+   */
+  strokeWidthMultiplier?: number;
 }
 
 export const DEFAULT_VIEW_BOX_SIZE = 300;
 export const DEFAULT_TRACE_COLOR = '#3478f6';
+
+interface StrokeShapeProps {
+  points: Point[];
+  color: string;
+  strokeWidth: number;
+  opacity?: number;
+  dasharray?: string;
+}
+
+/**
+ * Renders one stroke as a dashed/solid line, except a genuine single-tap "dot" stroke (see
+ * `isDotStroke`) — `pointsToSvgPath` would draw those as an invisible zero-length path, so they
+ * get an explicit Circle instead.
+ */
+function StrokeShape({ points, color, strokeWidth, opacity, dasharray }: StrokeShapeProps) {
+  if (points.length === 0) {
+    return null;
+  }
+  if (isDotStroke(points)) {
+    return <Circle cx={points[0].x} cy={points[0].y} r={strokeWidth / 2} fill={color} opacity={opacity} />;
+  }
+  return (
+    <Path
+      d={pointsToSvgPath(points)}
+      stroke={color}
+      strokeOpacity={opacity}
+      strokeWidth={strokeWidth}
+      strokeDasharray={dasharray}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  );
+}
 
 /**
  * A tracing surface: renders a dashed stencil guide plus the child's in-progress stroke, and
@@ -58,6 +98,7 @@ export function TracingCanvas({
   hintText = null,
   scoringOptions,
   disabled = false,
+  strokeWidthMultiplier = 1,
 }: TracingCanvasProps) {
   const strokePoints = useRef<Point[]>([]);
 
@@ -129,8 +170,8 @@ export function TracingCanvas({
   );
 
   const viewBox = useMemo(() => `0 0 ${viewBoxSize} ${viewBoxSize}`, [viewBoxSize]);
-  const guideStrokeWidth = viewBoxSize * 0.03;
-  const traceStrokeWidth = viewBoxSize * 0.035;
+  const guideStrokeWidth = viewBoxSize * 0.03 * strokeWidthMultiplier;
+  const traceStrokeWidth = viewBoxSize * 0.035 * strokeWidthMultiplier;
 
   return (
     <View style={{ width: size, height: size }} {...panResponder.panHandlers}>
@@ -154,48 +195,30 @@ export function TracingCanvas({
           strokeWidth={viewBoxSize * 0.004}
         />
         {otherStencilGuides.map((guide, i) => (
-          <Path
+          <StrokeShape
             key={`other-guide-${i}`}
-            d={pointsToSvgPath(guide)}
-            stroke="#c7c7cc"
-            strokeOpacity={0.4}
+            points={guide}
+            color="#c7c7cc"
+            opacity={0.4}
             strokeWidth={guideStrokeWidth}
-            strokeDasharray={`${guideStrokeWidth} ${guideStrokeWidth}`}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
+            dasharray={`${guideStrokeWidth} ${guideStrokeWidth}`}
           />
         ))}
-        <Path
-          d={pointsToSvgPath(stencil)}
-          stroke="#c7c7cc"
+        <StrokeShape
+          points={stencil}
+          color="#c7c7cc"
           strokeWidth={guideStrokeWidth}
-          strokeDasharray={`${guideStrokeWidth} ${guideStrokeWidth}`}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
+          dasharray={`${guideStrokeWidth} ${guideStrokeWidth}`}
         />
         {completedStrokes.map((strokePointsForPath, i) => (
-          <Path
+          <StrokeShape
             key={`completed-${i}`}
-            d={pointsToSvgPath(strokePointsForPath)}
-            stroke={traceColor}
+            points={strokePointsForPath}
+            color={traceColor}
             strokeWidth={traceStrokeWidth}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
           />
         ))}
-        {tracedPoints.length > 0 && (
-          <Path
-            d={pointsToSvgPath(tracedPoints)}
-            stroke={traceColor}
-            strokeWidth={traceStrokeWidth}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        )}
+        <StrokeShape points={tracedPoints} color={traceColor} strokeWidth={traceStrokeWidth} />
         {tracedPoints.length === 0 && stencil.length > 0 && (
           <Circle cx={stencil[0].x} cy={stencil[0].y} r={viewBoxSize * 0.025} fill={Colors.numbers} />
         )}

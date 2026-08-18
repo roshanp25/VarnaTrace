@@ -175,6 +175,7 @@ export function MultiStrokeTracingCanvas({
         hintText={hintText}
         scoringOptions={config.scoring}
         disabled={demoStrokes !== null}
+        strokeWidthMultiplier={config.traceSurfaceWidthMultiplier}
       />
       {demoStrokes && (
         <TraceDemo

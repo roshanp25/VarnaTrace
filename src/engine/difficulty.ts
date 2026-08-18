@@ -18,6 +18,12 @@ export interface DifficultyConfig {
   /** Whether the trace screen plays an animated arrow demo of the whole character before the child can draw. */
   guidedDemo: boolean;
   /**
+   * Multiplies the stencil guide's and traced line's rendered width (TracingCanvas's
+   * `guideStrokeWidth`/`traceStrokeWidth`). Purely visual — does not affect scoring tolerance —
+   * so the drawing surface reads as more forgiving in Easy without changing what actually passes.
+   */
+  traceSurfaceWidthMultiplier: number;
+  /**
    * Below this, a retried stroke gets a single-stroke guided-arrow replay instead of the plain
    * "Try again!" pill — reserved for a genuine miss, not just an imprecise attempt. Null when
    * `guidedDemo` is false (no demo to replay) or the mode has no retry mechanic at all.
@@ -41,6 +47,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     maxStrokeAttempts: 3,
     guidedDemo: true,
     missDemoThreshold: MISS_THRESHOLD,
+    traceSurfaceWidthMultiplier: 1.4,
   },
   difficult: {
     scoring: {
@@ -55,5 +62,6 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     maxStrokeAttempts: 1,
     guidedDemo: false,
     missDemoThreshold: null,
+    traceSurfaceWidthMultiplier: 1,
   },
 };
