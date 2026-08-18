@@ -48,7 +48,7 @@ function Tile({
       style={[styles.tile, { backgroundColor: colors.soft }]}
       onPress={() => {
         if (locked) {
-          router.push('/parental-gate');
+          router.push('/paywall');
           return;
         }
         router.push({ pathname: '/trace/[characterId]', params: { characterId: character.id } });

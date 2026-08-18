@@ -1,20 +1,20 @@
 # Content Gating Feature
 
 Determines which content (characters/numbers) is accessible based on free/paid tier, backed by
-`StorageService`.
+the real-time subscription entitlement (`src/services/subscription/`) — not a stored unlock flag.
 
-- `entitlementService.ts` — storage-backed `hasUnlockedPaidContent()` / `unlockPaidContent()`.
-  Defaults to not-unlocked; nothing currently calls `unlockPaidContent()` — that's the seam the
-  future IAP purchase flow will call into once it exists.
-- `access.ts` — pure `isCharacterAccessible(character, hasUnlockedPaidContent)` helper: free
-  characters are always accessible, paid ones only once unlocked.
+- `access.ts` — pure `isCharacterAccessible(character, isSubscribed)` helper: free characters are
+  always accessible, paid ones only while `subscriptionService.getEntitlementStatus()` reports an
+  active subscription.
+- `PaywallScreen.tsx` — the subscribe/restore screen, with a live plan picker
+  (`subscriptionService.getAvailablePlans()`) and a live paid-character count from
+  `allCharacters`.
 
 The actual free/paid split per character lives in `src/content/tiers.ts`, not here — this feature
 only enforces whatever that file decides, so the split can change without touching gating logic.
 
-`CategoryGridScreen` is the only current consumer of `isCharacterAccessible`: locked tiles don't
-navigate to the tracer, they navigate to `/parental-gate`
-(`src/features/parental-gate/`) instead. Passing that gate routes to `PaywallScreen.tsx` here — a
-teaser only ("Unlock the full pack", live paid-character count from `allCharacters`), since actual
-purchasing isn't wired up: the button is inert ("Coming soon"). That's still separate, not-yet-built
-work — `unlockPaidContent()` in `entitlementService.ts` is the seam for it, unused until then.
+`CategoryGridScreen` is the only current consumer of `isCharacterAccessible`: locked tiles route
+straight to `/paywall` (`PaywallScreen.tsx`). There used to be a parental-gate math-challenge screen
+in front of it — that was an Apple Kids Category requirement, removed once the app stopped
+targeting that category. A real purchase still goes through Apple's own StoreKit confirmation
+(Face ID/Touch ID/password) regardless of audience.

@@ -6,7 +6,8 @@ Last updated: 2026-08-16
 
 App Store listing:
 - App Name: **VarnaTrace: English & Hindi** (27 chars)
-- Subtitle: **Handwriting Tracing for Kids** (28 chars)
+- Subtitle: ~~Handwriting Tracing for Kids~~ **Handwriting Tracing** (20 chars) — "for Kids" dropped
+  2026-08-18 alongside exiting Apple's Kids Category, see Section 0 item 23.
 
 ---
 
@@ -92,7 +93,8 @@ requirements source of truth, but may describe things not built yet.
     (`allCharacters.filter(tier === 'paid').length`, never hardcoded). New routes `/parental-gate`
     and `/paywall` (`app/parental-gate.tsx`, `app/paywall.tsx`, registered in `app/_layout.tsx`).
     Locked tiles in `CategoryGridScreen` now `router.push('/parental-gate')`; on success it
-    `router.replace`s to `/paywall`. **Note for anyone adding a route:** `.expo/types/router.d.ts`
+    `router.replace`s to `/paywall`. **This gate was removed 2026-08-18 — see item 23** — locked
+    tiles route straight to `/paywall` now. **Note for anyone adding a route:** `.expo/types/router.d.ts`
     (typed-routes codegen) is gitignored and only regenerates while the Expo dev server is
     running — a fresh `tsc --noEmit` right after adding a new route file will fail until
     `expo start` (any platform) has run at least once against the new file.
@@ -254,6 +256,31 @@ requirements source of truth, but may describe things not built yet.
       +3858ms, matching the coded per-stroke timing exactly (not a stub/no-op). Also confirmed
       in-browser that Hard mode renders neither the arrow overlay nor the pencil button.
 
+23. **Exited Apple's Kids Category; parental gate removed (2026-08-18)** — while discussing the
+    reward-popup UX, the user reconsidered the app's positioning: no longer kids-only, should read
+    as a general language-learning app adults can use too. Downstream of that, re-examined which
+    already-built pieces existed specifically to satisfy Kids Category App Review rules rather than
+    general product need. Found one concrete one: the parental gate (item 18's math-challenge
+    screen) — its own README said outright "Required for Apple Kids Category compliance." Outside
+    that category Apple doesn't require it, and a real purchase already goes through Apple's own
+    StoreKit confirmation (Face ID/Touch ID/password) via RevenueCat regardless of audience, so the
+    gate was pure redundant friction once the category requirement was gone, not a safeguard being
+    given up. **Removed**: `src/features/parental-gate/` (whole directory, `ParentalGateScreen.tsx`
+    + `generateChallenge.ts` + its test + README) and the `/parental-gate` route (`app/
+    parental-gate.tsx`, and its `Stack.Screen` registration in `app/_layout.tsx`). `CategoryGridScreen`'s
+    locked-tile handler now `router.push('/paywall')` directly instead of routing through the gate
+    first. `src/features/content-gating/README.md` also had a second, unrelated staleness fixed in
+    the same pass while touching this area: it still described an `entitlementService.ts` with
+    `hasUnlockedPaidContent()`/`unlockPaidContent()` as if live, but that file was actually removed
+    back when monetization switched to subscriptions (item 19) — corrected to describe the real
+    current mechanism (`subscriptionService.getEntitlementStatus()` via `access.ts`).
+    The "no third-party analytics/ad SDKs" rule (Section 3.4) was also a Kids-Category-specific
+    hard requirement, not a general one — nothing currently implements analytics/ads, so there was
+    no code to remove, but that constraint is now a choice rather than a compliance mandate if
+    revisited later. Section 2's "Built for Apple's Kids Category" framing and Section 3.6's
+    parental-gate requirement are the original spec and are left as historical record rather than
+    rewritten — Section 0 (this section) is the current-truth layer per this doc's own convention.
+
 **Verified working state as of last check:** typecheck clean, lint clean, engine suite green
 (`scoreTrace`, `scoreMultiStrokeTrace`, `difficulty`, 3 new tests for the new options/config).
 Manually walked through the Easy/Hard toggle and the guided arrow demo in-browser (see above).
@@ -307,7 +334,7 @@ If any of these are wrong, tell me and I'll update this doc before we touch code
 
 VarnaTrace is an offline, iPad-first tracing app that teaches UKG-age (5–6 year old) Indian preschoolers to handwrite the English alphabet, the Hindi varnamala, and numbers 1–50, using deterministic path-matching (not ML/handwriting recognition) to score how well a child traces a predefined stencil.
 
-Target platform: iPadOS only (no iPhone-specific UI in MVP). Built for Apple's Kids Category, which drives several hard constraints (no ads, no third-party analytics, no accounts, parental gate before any commerce).
+Target platform: iPadOS only (no iPhone-specific UI in MVP). ~~Built for Apple's Kids Category, which drives several hard constraints (no ads, no third-party analytics, no accounts, parental gate before any commerce).~~ **No longer targeting Kids Category as of 2026-08-18 — see Section 0 item 23.** This was the original spec's positioning; kept here as historical record.
 
 ---
 
@@ -362,7 +389,7 @@ Do not build any of the following without checking in first:
 
 - **Free tier:** a curated mix — a few vowels + a few consonants + numbers 1–10. Deliberately not "just the first N in each set," so the free tier demonstrates quality across both scripts (English shapes + Devanagari shapes) before asking for payment.
 - **Paid tier:** remaining content (full 49 Hindi characters, full A–Z, numbers 11–50), unlocked via IAP (see Open Decision #2).
-- **Parental gate:** a simple challenge (e.g. solve a basic math problem) must be passed before the user can reach *any* purchase/paywall screen. Required for Kids Category compliance — not optional, not a UX nicety.
+- ~~**Parental gate:** a simple challenge (e.g. solve a basic math problem) must be passed before the user can reach *any* purchase/paywall screen. Required for Kids Category compliance — not optional, not a UX nicety.~~ Built, then removed 2026-08-18 once Kids Category targeting was dropped — see Section 0 item 23. Real purchases still go through Apple's own StoreKit confirmation.
 
 ---
 
@@ -404,7 +431,7 @@ Confirmed order, one step at a time — after each step, stop and wait for revie
 4. ✅ **Tracing UI** — the canvas/interaction layer that captures touch/Pencil input and renders stencils, wired to the scoring engine.
 5. 🟡 **Content data** — English + Hindi character JSON data sets (stencil paths + metadata), per Open Decision #4. Hindi vowels + consonants done (46/49); Hindi conjuncts, full English alphabet, full 1–50 numbers still to do. See Section 0.
 6. ✅ **Free/paid content gating** — done, Section 0 items 17-18. Tier decided centrally (`src/content/tiers.ts`), locked tiles blocked and routed into the parental gate.
-7. ✅ **Parental gate** — done, Section 0 item 18. Math-challenge screen, passed before reaching the paywall teaser.
+7. ✅ ~~Parental gate~~ — built (Section 0 item 18, math-challenge screen before the paywall teaser), then **removed 2026-08-18** once the app stopped targeting Apple's Kids Category (Section 0 item 23) — it existed specifically for that category's App Review requirement.
 
 Flag to me if you think a different order makes more sense — one candidate worth considering: building the parental gate *before* content gating, since content gating's paywall screen depends on it existing. I've kept your original order above since it's still logically valid (gate can be a stub during step 6 and wired for real in step 7), but wanted to surface the dependency.
 

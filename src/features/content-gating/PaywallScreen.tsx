@@ -16,7 +16,9 @@ const PLAN_LABELS: Record<SubscriptionPlan, string> = {
 };
 
 /**
- * Reached only after the parental gate is passed. Subscribe/restore call the real
+ * Reached directly from a locked tile (no parental gate in front of it — that was a Kids Category
+ * requirement, removed once the app stopped targeting that category; real purchases still go
+ * through Apple's own StoreKit confirmation regardless). Subscribe/restore call the real
  * `subscriptionService` — on native that's RevenueCat (currently a Test Store key, so nothing
  * here is a real purchase yet); on web it's a fail-closed stub, so plans come back empty and both
  * buttons harmlessly report failure there. This app only sells monthly/yearly — a Lifetime package
