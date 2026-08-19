@@ -1,13 +1,12 @@
 /**
  * RevenueCat configuration.
  *
- * This is currently a **Test Store** API key (the "test_" prefix) — it routes purchases through
- * RevenueCat's simulated store, not real Apple purchases. It lets the purchase flow be exercised
- * end-to-end before any real App Store Connect product exists. Replace with the real Apple
- * platform API key from the RevenueCat dashboard once that product is configured and linked, and
- * before shipping to real users.
+ * Real Apple App Store key (the "appl_" prefix) — routes to the actual App Store, not RevenueCat's
+ * simulated Test Store. Real device/TestFlight testing now happens via Apple's own Sandbox
+ * environment (sign in with a Sandbox tester Apple ID), which this same key handles automatically
+ * alongside production purchases — no separate test key needed once real ASC products exist.
  */
-export const REVENUECAT_API_KEY = 'test_glCpZKefPxnmSqoEnJvwixiKYqx';
+export const REVENUECAT_API_KEY = 'appl_GhnRYcAMUctYKJCyoMVhgkXfrAx';
 
 /**
  * Entitlement identifier configured in the RevenueCat dashboard. Must match exactly — a mismatch

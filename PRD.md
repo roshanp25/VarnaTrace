@@ -311,9 +311,41 @@ touched here.
     Developer Program account credentials entered interactively via `eas` CLI when a real build is
     attempted, not something to hardcode here.
 
+25. **Real App Store Connect subscriptions + production RevenueCat key (2026-08-18)** — second
+    "must fix" item, done almost entirely by the user working through Apple's/RevenueCat's
+    dashboards live with step-by-step guidance (external accounts, not something doable from this
+    environment). Registered `com.roshanpoojary.varnatrace` as an App ID in the Apple Developer
+    portal; created the "Varna Trace: Hindi Writing" app record in App Store Connect; confirmed the
+    Paid Applications Agreement/banking/tax/Small Business Program were already Active from a prior
+    app. Created a `Varna Trace Premium` subscription group with two real products —
+    `com.roshanpoojary.varnatrace.premium.monthly` ($4.99) and `...premium.yearly` ($39.99), all
+    countries — saved but **deliberately not submitted for App Review yet** (no reason to start
+    that clock before a real build/marketing copy exist; saving doesn't block re-editing general
+    app-listing copy later, only the subscription's own display name/description would need
+    re-review if changed post-approval). Generated two separate App Store Connect API keys for
+    RevenueCat: a Team Key (`AuthKey_*.p8`, Admin role) for general metadata sync, and a distinct
+    In-App Purchase Key (`SubscriptionKey_*.p8`) for StoreKit 2 transaction validation — the
+    app-specific shared secret (StoreKit 1, legacy) and the StoreKit-Configuration offer-signing key
+    (Xcode-only, promotional-offer testing) were both deliberately skipped as not applicable. Added
+    a real **App Store** app in RevenueCat alongside the existing Test Store one, wired both keys,
+    registered RevenueCat's webhook URL in ASC's App Store Server Notifications settings (Production
+    + Sandbox) so renewal/cancellation/refund events reach RevenueCat in real time, enabled
+    "track new purchases from server-to-server notifications." Imported both real products into
+    RevenueCat (initially showed "Missing Metadata" — expected, mirrors the still-deferred ASC
+    review-screenshot/1024px promo image fields, not a functional blocker) and attached both to the
+    existing `premium` entitlement (entitlements are project-wide, so the one already used by Test
+    Store covers these too — no new entitlement needed). `src/services/subscription/config.ts`
+    updated from the `test_` Test Store key to the real `appl_` production key — **Test Store is no
+    longer used going forward**; real-device testing now happens via Apple's own Sandbox environment
+    (a Sandbox tester Apple ID on a real device/TestFlight build), which the same production key
+    handles transparently alongside real purchases, so there's no need to keep juggling two
+    RevenueCat keys per environment. **Still unverified**, same as items 20-21: nothing here has
+    been exercised on an actual device yet — first real proof requires an Expo Dev Client/EAS build.
+    **Still deferred from this item**: the 1024×1024 promotional image and the ASC review screenshot
+    (both need either real artwork or a real device — tracked as follow-ups, not blockers).
+
 ### Not started
-- **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21 has been exercised on an actual device yet. The dashboard is now correctly configured (entitlement `premium`, Monthly/Yearly products attached, single offering marked current) as far as could be checked from screenshots — first real proof this all actually works is a device build.
-- **Swapping the Test Store key for a real Apple key** — needs a real App Store Connect subscription product linked in the RevenueCat dashboard first.
+- **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21/25 has been exercised on an actual device yet. The dashboard and App Store Connect are now correctly configured (entitlement `premium`, both real Monthly/Yearly products attached, production key wired into code) as far as could be checked from the dashboards — first real proof this all actually works is a device build.
 - **Audio** (reward sounds) — not started.
 - **App icon/splash artwork, a bundled display font** — the UX redesign (see below) intentionally scoped these out; still using default Expo icon assets and system fonts at bold weights as a placeholder for the mockup's rounded display face.
 
