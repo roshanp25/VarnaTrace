@@ -344,6 +344,39 @@ touched here.
     **Still deferred from this item**: the 1024×1024 promotional image and the ASC review screenshot
     (both need either real artwork or a real device — tracked as follow-ups, not blockers).
 
+26. **Fourth Hindi conjunct: श्र (2026-08-19)** — third "must fix" item, closing the gap the launch
+    report called out by name ("3 conjuncts → common set: क्ष त्र ज्ञ श्र and others"). Scoped with
+    the user to just श्र for now — the four classically-taught "named" conjuncts every Hindi primer
+    covers explicitly, as opposed to expanding into everyday halant-stacked conjuncts (द्ध, क्त,
+    स्त, etc.), which was offered but declined. Content entry added to
+    `src/content/hindi/conjuncts.json` (`hi-conjunct-shra`, same placeholder-fallback pattern as the
+    other three — paid tier by default via `tiers.ts`, no explicit listing needed). **Real tracer
+    tool gap found and fixed**: `tools/stroke-tracer.html` (the committed version) only ever had
+    Vowels/Consonants/Matras hardcoded — no Conjuncts section existed, meaning whatever version was
+    actually used to trace the original 3 conjuncts was a local modification that was never
+    committed back (git confirms this file has exactly one commit in its history, before this
+    session). Initially patched a Conjuncts section into the committed tool directly, but the user
+    then located a genuinely superior version in their own Downloads folder
+    (`stroke-tracer_3.html`) — a unified Devanagari+English+Numbers tracer with per-section export,
+    real mouse controls (right-click-drag pan, scroll-wheel zoom, Shift+click straight lines), a
+    background grid, and an already-fixed overly-aggressive "jump guard" confirm dialog (fixed in a
+    separate session the user ran directly against that file). **That version now replaces
+    `tools/stroke-tracer.html` in the repo** — it's a strict superset of the old one's functionality
+    plus English/numbers tracing in the same tool, so `tools/stroke-tracer-english.html` is likely
+    now redundant (not removed this session, out of scope). Added श्र to its `CONJUNCTS` array
+    (still only had the original 3). User traced श्र through this tool (3 strokes) and sent the
+    exported JSON; merged into `assets/data/devanagari-conjuncts-strokes.json`. Validated clean via
+    `tools/devanagari/validate_hand_traces.py` (`PYTHONIOENCODING=utf-8` needed on this Windows
+    environment — the script's own print statements crash on the default `cp1252` console encoding
+    otherwise, unrelated to the data itself) — 3 strokes, no flags. Confirmed rendering correctly at
+    `/trace/hi-conjunct-shra` in the live app (title/label correct, no console errors) — actual pixel
+    screenshots aren't possible in this environment (see the browser-verification technique note
+    above), so DOM/text confirmation is the established fallback here. Full test suite: same 2
+    pre-existing, unrelated failures as before (the अ stale snapshot and a content-data assertion),
+    no new failures — a fresh snapshot was created for श्र automatically via the generic geometry
+    validity suite. **Hindi conjuncts now 4/4 of the "must fix" target**; going further (the ~10
+    everyday-conjunct option that was offered) remains a future option if revisited.
+
 ### Not started
 - **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21/25 has been exercised on an actual device yet. The dashboard and App Store Connect are now correctly configured (entitlement `premium`, both real Monthly/Yearly products attached, production key wired into code) as far as could be checked from the dashboards — first real proof this all actually works is a device build.
 - **Audio** (reward sounds) — not started.

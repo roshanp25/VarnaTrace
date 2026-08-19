@@ -306,6 +306,16 @@
     color:var(--ink-soft);
     width:100%;
   }
+  .section-select{
+    font-family:inherit;
+    font-size:12.5px;
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-radius:7px;
+    padding:9px 10px;
+    min-height:40px;
+    color:var(--ink);
+  }
   textarea{
     width:100%;
     height:70px;
@@ -355,12 +365,7 @@
 <div class="body-flex">
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
   <div class="sidebar" id="sidebar">
-    <div class="group-label" style="margin-top:0">Vowels</div>
-    <div class="char-grid" id="grid-vowels"></div>
-    <div class="group-label">Consonants</div>
-    <div class="char-grid" id="grid-consonants"></div>
-    <div class="group-label">Matras</div>
-    <div class="char-grid" id="grid-matras"></div>
+    <div id="sidebarGroups"></div>
   </div>
 
   <div class="main">
@@ -398,6 +403,7 @@
       <button class="tool" id="undoStrokeBtn">Undo stroke</button>
       <button class="tool quiet" id="clearBtn">Clear letter</button>
       <button class="tool quiet" id="toggleGuideBtn">Hide guide</button>
+      <button class="tool quiet" id="toggleGridBtn">Hide grid</button>
       <span class="status" id="status"></span>
     </div>
     <div class="action-bar bottom">
@@ -407,14 +413,21 @@
     </div>
 
     <details class="export-panel" id="exportPanel">
-      <summary>Export all traced letters</summary>
+      <summary>Export traced letters</summary>
       <div class="export-body">
+        <div class="group-label" style="margin:0 0 4px;">Everything</div>
         <button class="tool" id="exportBtn">Build JSON</button>
         <button class="tool primary" id="copyBtn">Copy JSON</button>
         <button class="tool" id="downloadBtn">Download file</button>
         <button class="tool" id="openTabBtn">Open in new tab</button>
+
+        <div class="group-label" style="width:100%; margin:10px 0 4px;">Just one section</div>
+        <select id="sectionSelect" class="section-select"></select>
+        <button class="tool primary" id="copySectionBtn">Copy section</button>
+        <button class="tool" id="downloadSectionBtn">Download section</button>
+
         <div class="export-status" id="exportStatus"></div>
-        <textarea id="exportBox" placeholder="Click 'Build JSON' to preview the export..." readonly></textarea>
+        <textarea id="exportBox" placeholder="Click 'Build JSON' (or a section button) to preview the export..." readonly></textarea>
       </div>
     </details>
   </div>
@@ -425,7 +438,29 @@ const VOWELS = ['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ
 const CONSONANTS = ['क','ख','ग','घ','ङ','च','छ','ज','झ','ञ','ट','ठ','ड','ढ','ण',
   'त','थ','द','ध','न','प','फ','ब','भ','म','य','र','ल','व','श','ष','स','ह'];
 const MATRAS = ['ा','ि','ी','ु','ू','े','ै','ो','ौ','ं','ः','्'];
-const ALL = [...VOWELS, ...CONSONANTS, ...MATRAS];
+const CONJUNCTS = ['क्ष','त्र','ज्ञ','श्र'];
+const UPPERCASE = Array.from({length:26}, (_,i) => String.fromCharCode(65+i));
+const LOWERCASE = Array.from({length:26}, (_,i) => String.fromCharCode(97+i));
+const NUMBERS = Array.from({length:50}, (_,i) => String(i+1));
+
+const DEVANAGARI_FONT = "'Noto Sans Devanagari','Mangal','Nirmala UI',sans-serif";
+const LATIN_FONT = "'Helvetica Neue',Arial,sans-serif";
+
+const CATEGORIES = [
+  { key:'vowels',      label:'Vowels',           items:VOWELS,      font:DEVANAGARI_FONT },
+  { key:'consonants',  label:'Consonants',       items:CONSONANTS,  font:DEVANAGARI_FONT },
+  { key:'matras',      label:'Matras',           items:MATRAS,      font:DEVANAGARI_FONT },
+  { key:'conjuncts',   label:'Conjuncts',        items:CONJUNCTS,   font:DEVANAGARI_FONT },
+  { key:'uppercase',   label:'Uppercase (A–Z)',  items:UPPERCASE,   font:LATIN_FONT },
+  { key:'lowercase',   label:'Lowercase (a–z)',  items:LOWERCASE,   font:LATIN_FONT },
+  { key:'numbers',     label:'Numbers (1–50)',   items:NUMBERS,     font:LATIN_FONT },
+];
+const ALL = CATEGORIES.flatMap(c => c.items);
+
+const charMeta = {}; // char -> {categoryKey, font}
+CATEGORIES.forEach(cat => {
+  cat.items.forEach(ch => { charMeta[ch] = {categoryKey: cat.key, font: cat.font}; });
+});
 
 const INTERNAL = 1200;
 const ZOOM_MIN = 1, ZOOM_MAX = 6, ZOOM_STEP = 1.6;
@@ -438,6 +473,7 @@ let mode = 'points';
 let zoom = 1;
 let panX = 0, panY = 0;
 let showGuide = true;
+let showGrid = true;
 let BASE = 520;
 
 let allTraces = {};
@@ -536,10 +572,37 @@ function resetView(){
   zoom = 1; panX = 0; panY = 0;
   applyTransform();
 }
-document.getElementById('zoom1x').onclick = () => { zoom = ZOOM_MIN; applyTransform(); };
-document.getElementById('zoom6x').onclick = () => { zoom = ZOOM_MAX; applyTransform(); };
-document.getElementById('zoomIn').onclick = () => { zoom = Math.min(ZOOM_MAX, zoom * ZOOM_STEP); applyTransform(); };
-document.getElementById('zoomOut').onclick = () => { zoom = Math.max(ZOOM_MIN, zoom / ZOOM_STEP); applyTransform(); };
+function zoomAtPoint(newZoomRaw, clientX, clientY){
+  const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoomRaw));
+  const rect = scrollViewport.getBoundingClientRect();
+  const Sx = clientX - rect.left, Sy = clientY - rect.top;
+  const Cx = BASE/2, Cy = BASE/2;
+  panX = panX + (Sx-Cx) * (1/newZoom - 1/zoom);
+  panY = panY + (Sy-Cy) * (1/newZoom - 1/zoom);
+  zoom = newZoom;
+  applyTransform();
+}
+document.getElementById('zoom1x').onclick = () => { zoom = ZOOM_MIN; panX=0; panY=0; applyTransform(); };
+document.getElementById('zoom6x').onclick = (e) => {
+  const rect = scrollViewport.getBoundingClientRect();
+  zoomAtPoint(ZOOM_MAX, rect.left+rect.width/2, rect.top+rect.height/2);
+};
+document.getElementById('zoomIn').onclick = () => {
+  const rect = scrollViewport.getBoundingClientRect();
+  zoomAtPoint(zoom * ZOOM_STEP, rect.left+rect.width/2, rect.top+rect.height/2);
+};
+document.getElementById('zoomOut').onclick = () => {
+  const rect = scrollViewport.getBoundingClientRect();
+  zoomAtPoint(zoom / ZOOM_STEP, rect.left+rect.width/2, rect.top+rect.height/2);
+};
+
+scrollViewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+  zoomAtPoint(zoom * factor, e.clientX, e.clientY);
+}, {passive:false});
+
+scrollViewport.addEventListener('contextmenu', e => e.preventDefault());
 
 function setMode(m){
   mode = m;
@@ -547,26 +610,46 @@ function setMode(m){
   drawing = false;
   freehandStroke = null;
   const banner = document.getElementById('banner');
+  const nav = '<span class="sub">Scroll or pinch to zoom (right-click drag / two-finger drag to pan) · hold Shift while clicking for a straight line</span>';
   if(m === 'points'){
-    banner.innerHTML = 'Tap along the gray letter to place a dot at each spot.<span class="sub">Pinch with two fingers to zoom · drag with two fingers to pan</span>';
+    banner.innerHTML = 'Click or tap along the gray letter to place a dot at each spot.' + nav;
   } else {
-    banner.innerHTML = 'Press and drag with one finger to draw a stroke in one motion.<span class="sub">Pinch with two fingers to zoom · drag with two fingers to pan</span>';
+    banner.innerHTML = 'Press and drag to draw a stroke in one motion.' + nav;
   }
+}
+
+function drawGridLines(){
+  if(!showGrid) return;
+  const minor = INTERNAL / 48;
+  gctx.strokeStyle = 'rgba(150,138,105,0.16)';
+  gctx.lineWidth = 1;
+  gctx.beginPath();
+  for(let x=0; x<=INTERNAL; x+=minor){ gctx.moveTo(x,0); gctx.lineTo(x,INTERNAL); }
+  for(let y=0; y<=INTERNAL; y+=minor){ gctx.moveTo(0,y); gctx.lineTo(INTERNAL,y); }
+  gctx.stroke();
+
+  gctx.strokeStyle = 'rgba(140,126,90,0.30)';
+  gctx.lineWidth = 1;
+  gctx.beginPath();
+  for(let x=0; x<=INTERNAL; x+=minor*4){ gctx.moveTo(x,0); gctx.lineTo(x,INTERNAL); }
+  for(let y=0; y<=INTERNAL; y+=minor*4){ gctx.moveTo(0,y); gctx.lineTo(INTERNAL,y); }
+  gctx.stroke();
 }
 
 function drawGuide(char){
   gctx.clearRect(0,0,INTERNAL,INTERNAL);
+  drawGridLines();
   if(!showGuide) return;
 
   const margin = INTERNAL * 0.06;
-  gctx.strokeStyle = '#d8d0bd';
+  gctx.strokeStyle = '#b98f6a';
   gctx.lineWidth = 2;
   gctx.beginPath();
   gctx.moveTo(margin, INTERNAL*0.30); gctx.lineTo(INTERNAL - margin, INTERNAL*0.30);
   gctx.moveTo(margin, INTERNAL*0.86); gctx.lineTo(INTERNAL - margin, INTERNAL*0.86);
   gctx.stroke();
 
-  const fontFamily = "'Noto Sans Devanagari','Mangal','Nirmala UI',sans-serif";
+  const fontFamily = (charMeta[char] && charMeta[char].font) || DEVANAGARI_FONT;
   gctx.textAlign = 'left';
   gctx.textBaseline = 'alphabetic';
   gctx.fillStyle = 'rgba(35,35,38,0.16)';
@@ -669,13 +752,28 @@ function renderStatusHint(){
   statusEl.textContent = currentStroke.length ? currentStroke.length + ' pt' + (currentStroke.length>1?'s':'') : '';
 }
 
+let mousePanning = false;
+let mousePanStartClient = null;
+let mousePanStart = null;
+let lastShiftHeld = false;
+
 drawCanvas.addEventListener('pointerdown', e => {
   e.preventDefault();
   drawCanvas.setPointerCapture(e.pointerId);
+
+  // right-click or middle-click drag always pans, regardless of mode
+  if(e.pointerType === 'mouse' && (e.button === 2 || e.button === 1)){
+    mousePanning = true;
+    mousePanStartClient = [e.clientX, e.clientY];
+    mousePanStart = [panX, panY];
+    return;
+  }
+
   activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
 
   if(activePointers.size === 1){
     dragStartClient = [e.clientX, e.clientY];
+    lastShiftHeld = e.shiftKey;
     drawing = true;
     if(mode === 'freehand') freehandStroke = [toInternal(e.clientX, e.clientY)];
   } else if(activePointers.size === 2){
@@ -692,6 +790,15 @@ drawCanvas.addEventListener('pointerdown', e => {
 }, {passive:false});
 
 drawCanvas.addEventListener('pointermove', e => {
+  if(mousePanning){
+    e.preventDefault();
+    const dx = e.clientX - mousePanStartClient[0];
+    const dy = e.clientY - mousePanStartClient[1];
+    panX = mousePanStart[0] + dx / zoom;
+    panY = mousePanStart[1] + dy / zoom;
+    applyTransform();
+    return;
+  }
   if(!activePointers.has(e.pointerId)) return;
   activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
   e.preventDefault();
@@ -716,7 +823,30 @@ drawCanvas.addEventListener('pointermove', e => {
   }
 }, {passive:false});
 
+function snapToAxis(dx, dy){
+  const angle = Math.atan2(dy, dx);
+  const step = Math.PI / 4;
+  const snapped = Math.round(angle / step) * step;
+  const d = Math.hypot(dx, dy);
+  return [Math.cos(snapped) * d, Math.sin(snapped) * d];
+}
+function addPointWithJumpGuard(pt, shiftHeld){
+  if(currentStroke.length > 0 && shiftHeld){
+    const last = currentStroke[currentStroke.length - 1];
+    let dx = pt[0]-last[0], dy = pt[1]-last[1];
+    [dx, dy] = snapToAxis(dx, dy);
+    pt = [Math.round(last[0]+dx), Math.round(last[1]+dy)];
+  }
+  currentStroke.push(pt);
+  redraw();
+  renderStatusHint();
+}
+
 function endPointer(e){
+  if(mousePanning){
+    mousePanning = false;
+    return;
+  }
   activePointers.delete(e.pointerId);
 
   if(activePointers.size === 0){
@@ -726,9 +856,7 @@ function endPointer(e){
       if(mode === 'points'){
         const d = Math.hypot(e.clientX - dragStartClient[0], e.clientY - dragStartClient[1]);
         if(d < 12){
-          currentStroke.push(toInternal(e.clientX, e.clientY));
-          redraw();
-          renderStatusHint();
+          addPointWithJumpGuard(toInternal(e.clientX, e.clientY), lastShiftHeld || e.shiftKey);
         }
       } else if(mode === 'freehand'){
         if(freehandStroke && freehandStroke.length > 1) strokes.push(freehandStroke);
@@ -767,6 +895,11 @@ document.getElementById('clearBtn').onclick = () => {
 document.getElementById('toggleGuideBtn').onclick = (e) => {
   showGuide = !showGuide;
   e.target.textContent = showGuide ? 'Hide guide' : 'Show guide';
+  drawGuide(ALL[currentIndex]);
+};
+document.getElementById('toggleGridBtn').onclick = (e) => {
+  showGrid = !showGrid;
+  e.target.textContent = showGrid ? 'Hide grid' : 'Show grid';
   drawGuide(ALL[currentIndex]);
 };
 
@@ -823,20 +956,41 @@ document.getElementById('saveBtn').onclick = async () => {
   highlightGrid();
 };
 
-function buildGrid(containerId, chars){
-  const el = document.getElementById(containerId);
-  el.innerHTML = '';
-  chars.forEach(c => {
-    const btn = document.createElement('div');
-    btn.className = 'char-btn';
-    btn.textContent = c;
-    btn.onclick = () => { loadChar(ALL.indexOf(c)); closeSidebar(); };
-    el.appendChild(btn);
+function buildSidebar(){
+  const container = document.getElementById('sidebarGroups');
+  container.innerHTML = '';
+  CATEGORIES.forEach((cat, i) => {
+    const label = document.createElement('div');
+    label.className = 'group-label';
+    if(i === 0) label.style.marginTop = '0';
+    label.textContent = cat.label;
+    container.appendChild(label);
+
+    const grid = document.createElement('div');
+    grid.className = 'char-grid';
+    cat.items.forEach(c => {
+      const btn = document.createElement('div');
+      btn.className = 'char-btn';
+      btn.textContent = c;
+      btn.onclick = () => { loadChar(ALL.indexOf(c)); closeSidebar(); };
+      grid.appendChild(btn);
+    });
+    container.appendChild(grid);
   });
 }
-buildGrid('grid-vowels', VOWELS);
-buildGrid('grid-consonants', CONSONANTS);
-buildGrid('grid-matras', MATRAS);
+buildSidebar();
+
+function buildSectionSelect(){
+  const sel = document.getElementById('sectionSelect');
+  sel.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat.key;
+    opt.textContent = cat.label;
+    sel.appendChild(opt);
+  });
+}
+buildSectionSelect();
 
 function highlightGrid(){
   document.querySelectorAll('.char-btn').forEach(btn => {
@@ -890,7 +1044,7 @@ document.getElementById('downloadBtn').onclick = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'devanagari-stroke-traces.json';
+    a.download = 'devanagari-strokes.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -914,6 +1068,60 @@ document.getElementById('openTabBtn').onclick = () => {
     exportStatus.textContent = 'Pop-up blocked — use Copy JSON instead.';
   } else {
     exportStatus.textContent = 'Opened in a new tab — use Safari\'s Share button there to save it.';
+  }
+};
+
+// ---- per-section export: only the letters within one category ----
+function buildSectionTraces(key){
+  const cat = CATEGORIES.find(c => c.key === key);
+  const out = {};
+  cat.items.forEach(ch => { if(allTraces[ch]) out[ch] = allTraces[ch]; });
+  return {cat, data: out};
+}
+
+document.getElementById('copySectionBtn').onclick = async () => {
+  const key = document.getElementById('sectionSelect').value;
+  const {cat, data} = buildSectionTraces(key);
+  const n = Object.keys(data).length;
+  if(n === 0){
+    exportStatus.textContent = 'Nothing traced yet in ' + cat.label + '.';
+    return;
+  }
+  const json = JSON.stringify(data, null, 2);
+  document.getElementById('exportBox').value = json;
+  try{
+    await navigator.clipboard.writeText(json);
+    exportStatus.textContent = 'Copied ✓ — ' + n + ' letter' + (n>1?'s':'') + ' from ' + cat.label + '.';
+  }catch(e){
+    const box = document.getElementById('exportBox');
+    box.focus(); box.select();
+    exportStatus.textContent = 'Could not auto-copy — text is selected below, use Copy manually.';
+  }
+};
+
+document.getElementById('downloadSectionBtn').onclick = () => {
+  const key = document.getElementById('sectionSelect').value;
+  const {cat, data} = buildSectionTraces(key);
+  const n = Object.keys(data).length;
+  if(n === 0){
+    exportStatus.textContent = 'Nothing traced yet in ' + cat.label + '.';
+    return;
+  }
+  const json = JSON.stringify(data, null, 2);
+  document.getElementById('exportBox').value = json;
+  try{
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'devanagari-strokes-' + key + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    exportStatus.textContent = 'Download attempted — ' + n + ' letter' + (n>1?'s':'') + ' from ' + cat.label + '. If nothing appeared, use Copy section instead.';
+  }catch(e){
+    exportStatus.textContent = 'Download blocked here — use Copy section instead.';
   }
 };
 

@@ -57,6 +57,25 @@
           }
         ]
       ]
+    },
+    {
+      "id": "hi-conjunct-shra",
+      "script": "hindi",
+      "category": "conjunct",
+      "displayLabel": "श्र",
+      "note": "Placeholder fallback shape only. Real geometry comes from the hand-traced source data (assets/data/devanagari-conjuncts-strokes.json) via applyHandTracedStrokes at runtime -- this value is never shown as long as that entry exists.",
+      "strokes": [
+        [
+          {
+            "x": 50,
+            "y": 50
+          },
+          {
+            "x": 250,
+            "y": 250
+          }
+        ]
+      ]
     }
   ]
 }
