@@ -21,10 +21,10 @@ export interface TraceDemoProps {
 const SAMPLE_COUNT = 60;
 
 /** How long the arrow takes to travel one stroke, regardless of the stroke's length. */
-const DURATION_PER_STROKE_MS = 700;
+const DURATION_PER_STROKE_MS = 1100;
 
 /** Pause between strokes, so a multi-stroke character reads as distinct pen-lifts, not one blur. */
-const PAUSE_BETWEEN_STROKES_MS = 250;
+const PAUSE_BETWEEN_STROKES_MS = 350;
 
 interface MarkerState {
   x: number;

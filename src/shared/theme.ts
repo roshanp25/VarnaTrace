@@ -19,6 +19,12 @@ import { Script } from '../content';
 export const Colors = {
   ink: '#241B45',
   paper: '#FFFDF8',
+  /**
+   * Screen background — a warm tan, deliberately deeper than `paper`/`panel` so cards read as
+   * lighter surfaces sitting on top of it, instead of a near-white screen where cards barely
+   * registered as distinct from the page (the flat, "empty" look flagged in testing).
+   */
+  background: '#F1E9DD',
   panel: '#FBF1DD',
   brand: '#6C4DFF',
 

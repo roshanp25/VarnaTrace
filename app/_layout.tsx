@@ -1,4 +1,8 @@
-import { NotoSansDevanagari_400Regular, useFonts } from '@expo-google-fonts/noto-sans-devanagari';
+import {
+  NotoSansDevanagari_400Regular,
+  NotoSansDevanagari_700Bold,
+  useFonts,
+} from '@expo-google-fonts/noto-sans-devanagari';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
@@ -7,20 +11,20 @@ import { SCRIPT_LABELS } from '../src/shared/categories';
 import { Colors } from '../src/shared/theme';
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ NotoSansDevanagari_400Regular });
+  const [fontsLoaded] = useFonts({ NotoSansDevanagari_400Regular, NotoSansDevanagari_700Bold });
 
   if (!fontsLoaded) {
-    return <View style={{ flex: 1, backgroundColor: Colors.paper }} />;
+    return <View style={{ flex: 1, backgroundColor: Colors.background }} />;
   }
 
   return (
     <>
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: Colors.paper },
+          headerStyle: { backgroundColor: Colors.background },
           headerTintColor: Colors.ink,
           headerShadowVisible: false,
-          contentStyle: { backgroundColor: Colors.paper },
+          contentStyle: { backgroundColor: Colors.background },
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />

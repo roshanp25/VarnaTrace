@@ -28,15 +28,24 @@ export const revenueCatSubscriptionService: SubscriptionService = {
   },
 
   async getAvailablePlans() {
-    const packages = await getCurrentPackages();
-    const options: SubscriptionPlanOption[] = [];
-    for (const pkg of packages) {
-      const plan = planForPackageType(pkg.packageType);
-      if (plan) {
-        options.push({ plan, priceString: pkg.product.priceString });
+    try {
+      const packages = await getCurrentPackages();
+      const options: SubscriptionPlanOption[] = [];
+      for (const pkg of packages) {
+        const plan = planForPackageType(pkg.packageType);
+        if (plan) {
+          options.push({ plan, priceString: pkg.product.priceString });
+        }
       }
+      return options;
+    } catch (error) {
+      // Matches the interface's documented contract ("empty if none are available") instead of
+      // rejecting — e.g. offerings not yet configured for this build, or no network. A rejected
+      // promise here would go uncaught at the PaywallScreen call site and silently leave it stuck
+      // showing no plans with no explanation.
+      console.error('getAvailablePlans failed', error);
+      return [];
     }
-    return options;
   },
 
   async purchaseSubscription(plan) {

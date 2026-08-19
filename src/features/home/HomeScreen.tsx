@@ -1,19 +1,34 @@
 import { useCallback, useState } from 'react';
-import { Link, useFocusEffect } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { Link, router, useFocusEffect } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
-import { getCharactersByScript, Script } from '../../content';
+import { allCharacters, getCharacterById, getCharactersByScript, Script } from '../../content';
 import { SCRIPT_LABELS } from '../../shared/categories';
 import { fontFamilyForScript } from '../../shared/fonts';
 import { Colors, getCategoryColors } from '../../shared/theme';
-import { getCompletedCharacterIds } from '../progress/progressService';
+import {
+  computeStreak,
+  getCompletedCharacterIds,
+  getCompletionDates,
+  getLastTracedCharacterId,
+} from '../progress/progressService';
 
 const CATEGORY_COPY: Record<Script, { name: string; route: '/english' | '/hindi' | '/number' }> = {
   english: { name: SCRIPT_LABELS.english, route: '/english' },
   hindi: { name: `${SCRIPT_LABELS.hindi} · हिंदी`, route: '/hindi' },
   number: { name: SCRIPT_LABELS.number, route: '/number' },
 };
+
+/** Trace-count thresholds shown as achievement dots on the stats card — first trace, then two
+ *  round waypoints, then the full set. The last one reads "All" rather than the raw character
+ *  count so it doesn't look like an arbitrary number pulled from nowhere. */
+const MILESTONES: { count: number; label: string }[] = [
+  { count: 1, label: 'First' },
+  { count: 25, label: '25' },
+  { count: 75, label: '75' },
+  { count: allCharacters.length, label: 'All' },
+];
 
 const RING_SIZE = 64;
 const RING_RADIUS = 28;
@@ -58,7 +73,7 @@ function CategoryCard({ script, completedIds }: { script: Script; completedIds: 
             <Text
               style={[
                 styles.cardGlyphText,
-                { color: colors.ink, fontFamily: fontFamilyForScript(script) },
+                { color: colors.ink, fontFamily: fontFamilyForScript(script, true) },
               ]}
             >
               {sample?.displayLabel}
@@ -66,7 +81,7 @@ function CategoryCard({ script, completedIds }: { script: Script; completedIds: 
           </View>
         </View>
         <View style={styles.cardMeta}>
-          <Text style={[styles.cardName, { color: colors.ink, fontFamily: fontFamilyForScript(script) }]}>
+          <Text style={[styles.cardName, { color: colors.ink, fontFamily: fontFamilyForScript(script, true) }]}>
             {copy.name}
           </Text>
           <Text style={[styles.cardSub, { color: colors.ink }]}>
@@ -78,31 +93,102 @@ function CategoryCard({ script, completedIds }: { script: Script; completedIds: 
   );
 }
 
-/** Purely decorative — no state, no data model. */
-function MascotDoodle() {
+/** Prominent shortcut back into the last character traced, with a streak badge if one's active. */
+function ContinueCard({ characterId, streak }: { characterId: string; streak: number }) {
+  const character = getCharacterById(characterId);
+  if (!character) {
+    return null;
+  }
+  const colors = getCategoryColors(character.script);
+
   return (
-    <Svg width={36} height={50} viewBox="0 0 40 56" style={styles.mascot}>
-      <Rect x={10} y={4} width={20} height={38} rx={9} fill={Colors.gold} />
-      <Rect x={11} y={2} width={18} height={10} rx={5} fill="#FF5A7A" />
-      <Path d="M13 38 L27 40 L21 54 Z" fill="#3A2A16" />
-      <Circle cx={17} cy={18} r={1.8} fill={Colors.ink} />
-      <Circle cx={25} cy={20} r={1.8} fill={Colors.ink} />
-      <Path d="M16 25 Q21 29 27 24" stroke={Colors.ink} strokeWidth={1.6} strokeLinecap="round" fill="none" />
-    </Svg>
+    <Pressable
+      style={[styles.continueCard, { backgroundColor: colors.soft, borderColor: colors.fill }]}
+      onPress={() => router.push({ pathname: '/trace/[characterId]', params: { characterId: character.id } })}
+    >
+      <View style={[styles.continueGlyphWrap, { backgroundColor: Colors.paper }]}>
+        <Text
+          style={[
+            styles.continueGlyphText,
+            { color: colors.ink, fontFamily: fontFamilyForScript(character.script, true) },
+          ]}
+        >
+          {character.displayLabel}
+        </Text>
+      </View>
+      <View style={styles.continueMeta}>
+        <Text style={[styles.continueLabel, { color: colors.ink }]}>Continue tracing</Text>
+        <Text style={[styles.continueName, { color: colors.ink }]}>{SCRIPT_LABELS[character.script]}</Text>
+      </View>
+      {streak > 0 && (
+        <View style={styles.streakBadge}>
+          <Text style={styles.streakBadgeText}>🔥 {streak}</Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 
+/** Overall trace count plus a row of achievement dots — no data model of its own beyond MILESTONES. */
+function StatsCard({ tracedCount, streak }: { tracedCount: number; streak: number }) {
+  const total = allCharacters.length;
+
+  return (
+    <View style={styles.statsCard}>
+      <View style={styles.statsRow}>
+        <View style={styles.statBlock}>
+          <Text style={styles.statValue}>{tracedCount}</Text>
+          <Text style={styles.statLabel}>of {total} traced</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statBlock}>
+          <Text style={styles.statValue}>{streak > 0 ? `🔥 ${streak}` : '0'}</Text>
+          <Text style={styles.statLabel}>{streak > 0 ? 'day streak' : 'trace today to start a streak'}</Text>
+        </View>
+      </View>
+      <Text style={styles.milestoneHeading}>Milestones</Text>
+      <View style={styles.milestoneRow}>
+        {MILESTONES.map((milestone) => {
+          const reached = tracedCount >= milestone.count;
+          return (
+            <View key={milestone.count} style={styles.milestone}>
+              <View style={[styles.milestoneDot, reached && styles.milestoneDotReached]}>
+                <Text style={[styles.milestoneStar, reached && styles.milestoneStarReached]}>★</Text>
+              </View>
+              <Text style={styles.milestoneLabel}>{milestone.label}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+interface ProgressSnapshot {
+  completedIds: Set<string>;
+  lastTracedCharacterId: string | null;
+  streak: number;
+}
+
+const EMPTY_PROGRESS: ProgressSnapshot = { completedIds: new Set(), lastTracedCharacterId: null, streak: 0 };
+
 export function HomeScreen() {
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [progress, setProgress] = useState<ProgressSnapshot>(EMPTY_PROGRESS);
 
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      getCompletedCharacterIds().then((ids) => {
-        if (!cancelled) {
-          setCompletedIds(new Set(ids));
-        }
-      });
+      Promise.all([getCompletedCharacterIds(), getLastTracedCharacterId(), getCompletionDates()]).then(
+        ([completedIds, lastTracedCharacterId, completionDates]) => {
+          if (!cancelled) {
+            setProgress({
+              completedIds: new Set(completedIds),
+              lastTracedCharacterId,
+              streak: computeStreak(completionDates),
+            });
+          }
+        },
+      );
       return () => {
         cancelled = true;
       };
@@ -110,7 +196,7 @@ export function HomeScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.wordmark}>
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
           <Path d="M4 19c4-9 8-13 16-15" stroke={Colors.brand} strokeWidth={2.6} strokeLinecap="round" />
@@ -119,23 +205,28 @@ export function HomeScreen() {
       </View>
       <Text style={styles.tagline}>Write the Hindi you speak, and more</Text>
 
-      <CategoryCard script="english" completedIds={completedIds} />
-      <CategoryCard script="hindi" completedIds={completedIds} />
-      <CategoryCard script="number" completedIds={completedIds} />
+      {progress.lastTracedCharacterId && (
+        <ContinueCard characterId={progress.lastTracedCharacterId} streak={progress.streak} />
+      )}
 
-      <View style={styles.mascotRow}>
-        <MascotDoodle />
-      </View>
-    </View>
+      <CategoryCard script="english" completedIds={progress.completedIds} />
+      <CategoryCard script="hindi" completedIds={progress.completedIds} />
+      <CategoryCard script="number" completedIds={progress.completedIds} />
+
+      <StatsCard tracedCount={progress.completedIds.size} streak={progress.streak} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.paper,
+    backgroundColor: Colors.background,
+  },
+  content: {
     paddingTop: 72,
     paddingHorizontal: 20,
+    paddingBottom: 32,
   },
   wordmark: {
     flexDirection: 'row',
@@ -197,15 +288,125 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.75,
   },
-  mascotRow: {
-    flex: 1,
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
-    paddingBottom: 8,
-    paddingRight: 4,
-    pointerEvents: 'none',
+  continueCard: {
+    borderRadius: 20,
+    borderWidth: 2,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 20,
   },
-  mascot: {
-    opacity: 0.9,
+  continueGlyphWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  continueGlyphText: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  continueMeta: {
+    flex: 1,
+  },
+  continueLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    opacity: 0.75,
+    marginBottom: 2,
+  },
+  continueName: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  streakBadge: {
+    backgroundColor: Colors.paper,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  streakBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.ink,
+  },
+  statsCard: {
+    backgroundColor: Colors.panel,
+    borderWidth: 2,
+    borderColor: 'rgba(36,27,69,0.08)',
+    borderRadius: 20,
+    padding: 18,
+    marginTop: 6,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statBlock: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(36,27,69,0.1)',
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.ink,
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: Colors.neutralMuted,
+    textAlign: 'center',
+  },
+  milestoneHeading: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: Colors.neutralMuted,
+    marginTop: 18,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(36,27,69,0.08)',
+  },
+  milestoneRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  milestone: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  milestoneDot: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: Colors.neutralBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  milestoneDotReached: {
+    backgroundColor: Colors.gold,
+  },
+  milestoneStar: {
+    fontSize: 14,
+    color: Colors.neutralMuted,
+  },
+  milestoneStarReached: {
+    color: Colors.paper,
+  },
+  milestoneLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.neutralMuted,
   },
 });

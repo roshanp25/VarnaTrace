@@ -31,6 +31,7 @@ export function PaywallScreen() {
   const paidCount = allCharacters.filter((c) => c.tier === 'paid').length;
   const [isActive, setIsActive] = useState(false);
   const [plans, setPlans] = useState<SubscriptionPlanOption[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [lastActionFailed, setLastActionFailed] = useState(false);
@@ -51,6 +52,7 @@ export function PaywallScreen() {
         return;
       }
       setPlans(options);
+      setPlansLoading(false);
       const preferred = options.find((option) => option.plan === 'yearly') ?? options[0];
       setSelectedPlan(preferred?.plan ?? null);
     });
@@ -144,9 +146,20 @@ export function PaywallScreen() {
           })}
         </View>
       )}
+      {!plansLoading && plans.length === 0 && (
+        <Text style={styles.errorText}>
+          Plans aren&apos;t available right now. Check your connection and reopen this screen.
+        </Text>
+      )}
 
-      <Pressable style={styles.cta} onPress={handleSubscribe} disabled={isBusy || !selectedPlan}>
-        <Text style={styles.ctaText}>{isBusy ? 'Please wait…' : 'Subscribe'}</Text>
+      <Pressable
+        style={[styles.cta, (isBusy || !selectedPlan) && styles.ctaDisabled]}
+        onPress={handleSubscribe}
+        disabled={isBusy || !selectedPlan}
+      >
+        <Text style={styles.ctaText}>
+          {isBusy ? 'Please wait…' : plansLoading ? 'Loading…' : 'Subscribe'}
+        </Text>
       </Pressable>
       <Pressable style={styles.restoreButton} onPress={handleRestore} disabled={isBusy}>
         <Text style={styles.restoreButtonText}>Restore Purchases</Text>
@@ -177,7 +190,7 @@ function CheckDot({ color }: { color: string }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.paper,
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
@@ -258,6 +271,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 32,
     backgroundColor: Colors.brand,
+  },
+  ctaDisabled: {
+    opacity: 0.5,
   },
   ctaText: {
     fontSize: 16,

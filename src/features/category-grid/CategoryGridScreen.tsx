@@ -57,7 +57,7 @@ function Tile({
       <Text
         style={[
           styles.tileText,
-          { color: colors.ink, fontFamily: fontFamilyForScript(character.script) },
+          { color: colors.ink, fontFamily: fontFamilyForScript(character.script, true) },
         ]}
       >
         {character.displayLabel}
@@ -137,7 +137,7 @@ const TILE_SIZE = 68;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.paper,
+    backgroundColor: Colors.background,
   },
   content: {
     paddingHorizontal: 20,

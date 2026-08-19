@@ -33,7 +33,7 @@ export interface TracingCanvasProps {
   hintText?: string | null;
   /** Forwarded to scoreTrace on release; omit to use the engine's own defaults. */
   scoringOptions?: ScoringOptions;
-  /** While true, all touch input is ignored — e.g. during a guided demo playing on top of the canvas. */
+  /** While true, all touch input is ignored. */
   disabled?: boolean;
   /**
    * Multiplies the rendered guide/trace line width — purely visual, does not affect scoring.

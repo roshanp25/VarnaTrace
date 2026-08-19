@@ -83,7 +83,7 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
       <Text
         style={[
           styles.title,
-          { color: categoryColors.ink, fontFamily: fontFamilyForScript(character.script) },
+          { color: categoryColors.ink, fontFamily: fontFamilyForScript(character.script, true) },
         ]}
       >
         {character.displayLabel}
@@ -174,7 +174,7 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.paper,
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },

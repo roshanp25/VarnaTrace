@@ -49,12 +49,14 @@ const RETRY_HINT_DURATION_MS = 1000;
  * prefer remounting over resetting state in an effect.
  *
  * When `difficulty`'s config enables `guidedDemo`, an animated arrow (TraceDemo) plays over the
- * canvas on mount, tracing every stroke in order before the underlying TracingCanvas accepts
- * touch input (`disabled` while the demo runs). Remounting (the same `key` mechanism above)
- * replays it — there's no separate imperative "replay" API. The same TraceDemo also gets
- * re-triggered mid-character, for just the current stroke, if a retried attempt scores below
- * `missDemoThreshold` — a plain "Try again!" pill covers a merely imprecise attempt, but a
- * genuine miss gets the stronger visual reminder instead (see handleStrokeComplete).
+ * canvas on mount, tracing every stroke in order — but the underlying TracingCanvas accepts touch
+ * input from the start, not just once the demo finishes; the first real point traced dismisses
+ * the demo (see handleTracedPointsChange), so an eager attempt doesn't have to wait it out.
+ * Remounting (the same `key` mechanism above) replays it — there's no separate imperative "replay"
+ * API. The same TraceDemo also gets re-triggered mid-character, for just the current stroke, if a
+ * retried attempt scores below `missDemoThreshold` — a plain "Try again!" pill covers a merely
+ * imprecise attempt, but a genuine miss gets the stronger visual reminder instead (see
+ * handleStrokeComplete).
  */
 export function MultiStrokeTracingCanvas({
   strokes,
@@ -114,6 +116,11 @@ export function MultiStrokeTracingCanvas({
   const handleTracedPointsChange = (points: Point[]) => {
     currentPointsRef.current = points;
     setCurrentPoints(points);
+    if (demoStrokes !== null && points.length === 1) {
+      // A real stroke just started — don't make them wait for the reference arrow to finish
+      // playing. It's served its purpose once the child starts drawing, so get it out of the way.
+      setDemoStrokes(null);
+    }
   };
 
   // This function is only ever invoked later, from a real touch-release event, never
@@ -174,7 +181,6 @@ export function MultiStrokeTracingCanvas({
         traceColor={traceColor}
         hintText={hintText}
         scoringOptions={config.scoring}
-        disabled={demoStrokes !== null}
         strokeWidthMultiplier={config.traceSurfaceWidthMultiplier}
       />
       {demoStrokes && (
