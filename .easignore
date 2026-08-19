@@ -3,3 +3,11 @@
 # elevated permissions, breaking the build archive step with EPERM.
 .claude/
 .agents/
+
+# Local-only dev env overrides (e.g. EXPO_PUBLIC_DEV_BYPASS_PAYWALL). These are gitignored, but
+# .easignore's mere presence stops EAS Build from also falling back to .gitignore's rules -- so
+# without this, a local .env would get bundled straight into a real build, silently making the
+# paywall always report "subscribed" and making the real purchase flow untestable.
+.env
+.env.local
+.env*.local
