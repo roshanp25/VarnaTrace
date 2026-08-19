@@ -1,16 +1,18 @@
 {
   "expo": {
-    "name": "VarnaTrace-scaffold",
-    "slug": "VarnaTrace-scaffold",
+    "name": "Varna Trace: Hindi Writing",
+    "slug": "varna-trace",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "varnatrace",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.roshanpoojary.varnatrace"
     },
     "android": {
+      "package": "com.roshanpoojary.varnatrace",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

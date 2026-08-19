@@ -5,9 +5,12 @@ decisions below via direct confirmation during build sessions — see Section 0.
 Last updated: 2026-08-16
 
 App Store listing:
-- App Name: **VarnaTrace: English & Hindi** (27 chars)
-- Subtitle: ~~Handwriting Tracing for Kids~~ **Handwriting Tracing** (20 chars) — "for Kids" dropped
-  2026-08-18 alongside exiting Apple's Kids Category, see Section 0 item 23.
+- App Name: ~~VarnaTrace: English & Hindi~~ **Varna Trace: Hindi Writing** (26 chars) — renamed
+  2026-08-18, see Section 0 item 24. Positioning narrowed to Hindi specifically (heritage/adult
+  angle); English tracing still exists in-app but is no longer in the name.
+- Subtitle: ~~Handwriting Tracing for Kids~~ ~~Handwriting Tracing~~ **Write the Hindi you speak**
+  (26 chars) — "for Kids" dropped 2026-08-18 alongside exiting Apple's Kids Category (Section 0
+  item 23); subtitle rewritten same day toward the heritage-learner angle (Section 0 item 24).
 
 ---
 
@@ -289,6 +292,24 @@ real touch/Pencil trace (needs a device — browser mouse-drag wasn't used to si
 stroke). Two pre-existing, unrelated test failures exist in `src/content/__tests__/` (a stale
 snapshot and a content-data assertion) — confirmed present before this session's changes too, not
 touched here.
+
+24. **Launch config: app identity + build profile (2026-08-18)** — working through a pre-launch
+    "must fix" checklist one item at a time (app store copy/analytics/conjuncts/RevenueCat still
+    pending, tracked separately). This item covers `app.json`/`eas.json`/`package.json` identity
+    only. `app.json`: `expo.name` "VarnaTrace-scaffold" → "Varna Trace: Hindi Writing" (matches the
+    new App Store name above), `expo.slug` "VarnaTrace-scaffold" → "varna-trace", added
+    `ios.bundleIdentifier` and `android.package` = `com.roshanpoojary.varnatrace` (neither was set
+    before — first real value). `package.json` name field also renamed off the scaffold placeholder
+    to match. New `eas.json` with standard `development`/`preview`/`production` build profiles (no
+    EAS project existed yet, so nothing to break by renaming the slug now — would need care if
+    changed later, since the slug ties to the EAS project). **Deliberately not done in this pass**:
+    production app icon — `PRD.md`'s own "Not started" list already flags icon/splash artwork as
+    intentionally out of scope for the MVP build (still default Expo placeholder assets); real
+    artwork needs to be supplied or commissioned before that can be wired in, so it's tracked as a
+    separate follow-up rather than blocking this config pass. Apple Team ID / App Store Connect
+    linkage also not done — `eas.json`'s `submit.production` is an empty stub; that needs the Apple
+    Developer Program account credentials entered interactively via `eas` CLI when a real build is
+    attempted, not something to hardcode here.
 
 ### Not started
 - **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21 has been exercised on an actual device yet. The dashboard is now correctly configured (entitlement `premium`, Monthly/Yearly products attached, single offering marked current) as far as could be checked from screenshots — first real proof this all actually works is a device build.
