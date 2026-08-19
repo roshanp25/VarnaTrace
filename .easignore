@@ -1,0 +1,5 @@
+# EAS Build upload exclusions -- Claude Code's own tooling directories, never part of the app.
+# .agents/skills/* contains symlinks into .claude/skills/*, which Windows can't follow without
+# elevated permissions, breaking the build archive step with EPERM.
+.claude/
+.agents/
