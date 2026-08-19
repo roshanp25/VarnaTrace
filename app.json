@@ -9,7 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.roshanpoojary.varnatrace"
+      "bundleIdentifier": "com.roshanpoojary.varnatrace",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.roshanpoojary.varnatrace",
@@ -30,6 +33,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "84b4e140-0813-4e69-99c5-967ec4da1b63"
+      }
+    },
+    "owner": "roshanp25"
   }
 }
