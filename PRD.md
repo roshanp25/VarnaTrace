@@ -412,6 +412,23 @@ touched here.
     if Android ever becomes a real target. Splash screen artwork also untouched (`splash-icon.png`
     isn't even referenced in `app.json` currently — dead asset, not wired to anything).
 
+28. **Home-screen copy audit (2026-08-19)** — fourth "must fix" item. Store-listing copy (name/
+    subtitle) was already decided in item 24; this closed the remaining piece: in-app copy. Audited
+    broadly first rather than guessing scope — `RewardOverlay.tsx`'s star-tiered messages ("Clean
+    strokes.", "Precise and controlled.", etc.) turned out to already be adult-neutral, rewritten in
+    the 2026-08-17/18 reward-overlay redesign session; the old kid-phrasing ("Wonderful tracing!")
+    that memory had flagged as "not yet audited" no longer exists anywhere in the codebase. The one
+    real gap was `HomeScreen.tsx`: the wordmark read "VarnaTrace" (no space, inconsistent with the
+    decided App Store name "Varna Trace") and the tagline ("Trace letters, varnamala & numbers")
+    was the literal audience-neutral copy the report called out. Fixed wordmark spacing to match.
+    For the tagline, presented three options and the user picked **"Write the Hindi you speak, and
+    more"** (em dash swapped for a comma per the user's explicit preference — em dashes read as
+    AI-generated) — keeps the App Store subtitle's heritage hook as the headline while explicitly
+    signalling breadth (English + numbers still exist), consistent with the same "Hindi leads,
+    doesn't exclude English" balance already established for the app icon (item 27). Verified live
+    in-browser via the shared dev server (`get_page_text` showed both strings rendering correctly),
+    typecheck clean.
+
 ### Not started
 - **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21/25 has been exercised on an actual device yet. The dashboard and App Store Connect are now correctly configured (entitlement `premium`, both real Monthly/Yearly products attached, production key wired into code) as far as could be checked from the dashboards — first real proof this all actually works is a device build.
 - **Audio** (reward sounds) — not started.

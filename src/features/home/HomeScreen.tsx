@@ -115,9 +115,9 @@ export function HomeScreen() {
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
           <Path d="M4 19c4-9 8-13 16-15" stroke={Colors.brand} strokeWidth={2.6} strokeLinecap="round" />
         </Svg>
-        <Text style={styles.wordmarkText}>VarnaTrace</Text>
+        <Text style={styles.wordmarkText}>Varna Trace</Text>
       </View>
-      <Text style={styles.tagline}>Trace letters, varnamala &amp; numbers</Text>
+      <Text style={styles.tagline}>Write the Hindi you speak, and more</Text>
 
       <CategoryCard script="english" completedIds={completedIds} />
       <CategoryCard script="hindi" completedIds={completedIds} />
