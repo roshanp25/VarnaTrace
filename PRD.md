@@ -429,6 +429,39 @@ touched here.
     in-browser via the shared dev server (`get_page_text` showed both strings rendering correctly),
     typecheck clean.
 
+29. **Minimal MVP analytics (2026-08-19)** — fifth and final "must fix" item. Report asked for an
+    install → first-trace → paywall-view → purchase funnel, framed as the highest-leverage item on
+    the list. Before building anything, worked through with the user what's actually missing: App
+    Store Connect's own free analytics already covers install (App Units) with zero code; RevenueCat
+    (already installed) already covers purchase. Considered switching to RevenueCat's prebuilt
+    Paywall UI to get paywall-view tracked for free too, but rejected it — it would mean reversing
+    the deliberate custom-`PaywallScreen` decision from item 18/19's history, and would still leave
+    first-trace uncovered (a bespoke in-app milestone no platform-level tool can see), splitting the
+    funnel across two systems instead of consolidating it. **Explicit user framing**: MVP-simplest
+    option now, revisit with a real analytics tool (PostHog was the earlier recommendation) once
+    there's actual install volume to justify it — not worth optimizing before knowing if anyone
+    downloads the app at all.
+    Landed on: **zero new third-party dependencies.** New `src/services/analytics/`
+    (`AnalyticsService` interface — deliberately narrow, just `recordFirstTraceCompleted()` and
+    `recordPaywallViewed()`, no generic "log any event" API, since only these two milestones lack a
+    home elsewhere) follows the exact platform-split pattern already established for
+    `subscription/` (`index.ts` web no-op stub, `index.native.ts` → `revenueCatAnalyticsService
+    .native.ts`). The native implementation reuses the already-installed `react-native-purchases`
+    SDK's **Subscriber Attributes** API (`Purchases.setAttributes()`) to tag the customer's
+    RevenueCat profile with `first_trace_completed_at` / `paywall_last_viewed_at` timestamps —
+    visible/filterable in RevenueCat's dashboard, not a real funnel chart, but zero new
+    infrastructure. `revenueCatAnalyticsService.native.ts` imports `../subscription` purely for its
+    module-load side effect (`Purchases.configure()`), guaranteeing the SDK is configured
+    regardless of which service happens to load first at app startup.
+    Wired at the two real call sites: `TracingScreen.tsx`'s `handleComplete` now checks whether
+    `getCompletedCharacterIds()` was empty *before* calling `markCharacterCompleted` — if so, this
+    is genuinely the user's first-ever passed trace, and `recordFirstTraceCompleted()` fires exactly
+    once (not on every subsequent completion). `PaywallScreen.tsx` gained a mount-only `useEffect`
+    calling `recordPaywallViewed()`. Verified: typecheck clean, full test suite unchanged (same 2
+    pre-existing failures, no new ones), no console errors on the web stub for either the paywall or
+    a trace screen (fire-and-forget promises, inherently low-risk on web since `index.ts`'s methods
+    are no-ops there). **All five original "must fix" items are now done.**
+
 ### Not started
 - **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21/25 has been exercised on an actual device yet. The dashboard and App Store Connect are now correctly configured (entitlement `premium`, both real Monthly/Yearly products attached, production key wired into code) as far as could be checked from the dashboards — first real proof this all actually works is a device build.
 - **Audio** (reward sounds) — not started.

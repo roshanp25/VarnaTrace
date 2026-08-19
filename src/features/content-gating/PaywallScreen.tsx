@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { allCharacters } from '../../content';
+import { analyticsService } from '../../services/analytics';
 import {
   subscriptionService,
   SubscriptionPlan,
@@ -33,6 +34,10 @@ export function PaywallScreen() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [lastActionFailed, setLastActionFailed] = useState(false);
+
+  useEffect(() => {
+    void analyticsService.recordPaywallViewed();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

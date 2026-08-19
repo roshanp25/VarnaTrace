@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
+import { analyticsService } from '../../services/analytics';
 import { getCharacterById, getCharactersByScript } from '../../content';
 import { DEFAULT_DIFFICULTY, Difficulty, DIFFICULTY_CONFIGS, MultiStrokeScoreResult } from '../../engine';
 import { fontFamilyForScript } from '../../shared/fonts';
 import { Colors, getCategoryColors } from '../../shared/theme';
-import { markCharacterCompleted } from '../progress/progressService';
+import { getCompletedCharacterIds, markCharacterCompleted } from '../progress/progressService';
 
 import { MultiStrokeTracingCanvas } from './MultiStrokeTracingCanvas';
 import { RewardOverlay } from './RewardOverlay';
@@ -56,7 +57,13 @@ export function TracingScreen({ characterId }: TracingScreenProps) {
   const handleComplete = (completed: MultiStrokeScoreResult) => {
     setResult(completed);
     if (completed.passed) {
-      void markCharacterCompleted(character.id);
+      void (async () => {
+        const wasFirstEver = (await getCompletedCharacterIds()).length === 0;
+        await markCharacterCompleted(character.id);
+        if (wasFirstEver) {
+          void analyticsService.recordFirstTraceCompleted();
+        }
+      })();
     }
   };
 
