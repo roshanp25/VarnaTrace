@@ -377,10 +377,45 @@ touched here.
     validity suite. **Hindi conjuncts now 4/4 of the "must fix" target**; going further (the ~10
     everyday-conjunct option that was offered) remains a future option if revisited.
 
+27. **Production app icon (2026-08-19)** — closes the last piece of item 1 (config was done in
+    item 24; artwork was the remaining gap). Explored three paths before landing: (1) the `design`
+    skill's Gemini-based generator — key authenticated but the user's Google Cloud project has zero
+    free-tier quota for image generation (billing not enabled), so unusable without that; (2) the
+    user's own Gemini output — visually appealing but structurally broken (rendered three
+    overlapping/duplicated glyphs — confirmed by rasterizing it, since two of its three `<path>`
+    groups had byte-for-byte identical geometry, a bug in whatever generated it — plus baked-in
+    rounded corners that would double-mask under iOS's own corner rounding); (3) **hand-built via
+    Python/Pillow**, landed on. Final concept: "Dual Practice" — a large solid अ (mastered) paired
+    with a smaller outline-only "A" (still being traced), connected by a subtle dotted gold trace
+    path that exits from अ's base and lands at A's apex, explicitly reading as one continuous
+    tracing motion across both scripts rather than a flashcard pairing. Deep-indigo/cream/gold
+    palette pulled directly from the app's real design tokens (`ink`/`paper`/`gold` in
+    `src/shared/theme.ts`), not invented — deliberately more restrained/premium than the brighter
+    in-app UI colors, since those read as playful/kid-app and the icon needed to avoid that per the
+    user's explicit brief. Devanagari correctness was treated as non-negotiable throughout: the अ
+    glyph is rendered directly from `NotoSansDevanagari_900Black.ttf` (the exact font file already
+    bundled and QA'd elsewhere in this app for Hindi rendering — see the 2026-08-16-ish Hindi font
+    fix noted earlier in this file), never hand-drawn or AI-generated, specifically to rule out the
+    known failure mode of generative models producing plausible-looking-but-structurally-wrong
+    Devanagari. Verified against a clean reference render of the same font before trusting the
+    concept. Latin "A" uses Century Gothic Bold (`C:\Windows\Fonts\GOTHICB.TTF`, a genuine
+    geometric sans matching the brief's "simple, modern geometric sans-serif" spec). **Positioning
+    note**: the user explicitly confirmed this icon is intentionally dual-script (both अ and A)
+    even though the app's *name*/subtitle went Hindi-only in item 24 (Section 0's App Store listing
+    block) — the icon represents the full app (it teaches both scripts), the name is a marketing
+    hook; not a contradiction, a deliberate scope difference flagged and confirmed before
+    proceeding. Final: `assets/icon.png`, 1024×1024 RGB (no alpha, matches iOS's requirement — the
+    OS applies its own corner mask, so the source must be a full-bleed square with no baked-in
+    rounding). **Not done this pass**: Android adaptive icon layers
+    (`android-icon-{foreground,background,monochrome}.png`) still show old placeholder art — out of
+    scope since this project's actual target is iOS-only (EAS Build, no Mac, per Section 6); revisit
+    if Android ever becomes a real target. Splash screen artwork also untouched (`splash-icon.png`
+    isn't even referenced in `app.json` currently — dead asset, not wired to anything).
+
 ### Not started
 - **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21/25 has been exercised on an actual device yet. The dashboard and App Store Connect are now correctly configured (entitlement `premium`, both real Monthly/Yearly products attached, production key wired into code) as far as could be checked from the dashboards — first real proof this all actually works is a device build.
 - **Audio** (reward sounds) — not started.
-- **App icon/splash artwork, a bundled display font** — the UX redesign (see below) intentionally scoped these out; still using default Expo icon assets and system fonts at bold weights as a placeholder for the mockup's rounded display face.
+- **Android adaptive icon layers + splash screen artwork** — the app icon itself is done (item 27); these are the remaining unstyled placeholder assets, out of scope while iOS is the only real target.
 - **ASC subscription review screenshot + 1024×1024 promotional image** (item 25) — both deferred; neither blocks anything today (subscriptions work for entitlement/testing purposes without them), but the review screenshot is required before actually submitting for App Review. The screenshot specifically needs either a real device/simulator paywall render (unavailable here) or a small temporary dev-only override to fake plan data for a browser screenshot (discussed, not built) — do this closer to actual submission time, not now.
 
 ### UX redesign session (2026-08-11)
