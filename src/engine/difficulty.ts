@@ -36,9 +36,9 @@ export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
 export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
   easy: {
     scoring: {
-      tolerance: 14,
-      maxDistance: 32,
-      directionEpsilonSamples: 6,
+      tolerance: 26,
+      maxDistance: 90,
+      directionEpsilonSamples: 10,
       passThreshold: PASS_THRESHOLD,
       requireEveryStrokeToPass: false,
     },
@@ -47,7 +47,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     maxStrokeAttempts: 3,
     guidedDemo: true,
     missDemoThreshold: MISS_THRESHOLD,
-    traceSurfaceWidthMultiplier: 1.4,
+    traceSurfaceWidthMultiplier: 2.2,
   },
   difficult: {
     scoring: {
