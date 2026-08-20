@@ -14,8 +14,9 @@ the real-time subscription entitlement (`src/services/subscription/`) — not a 
   EULA). When `getAvailablePlans()` comes back empty, it currently also renders a **temporary**
   on-device debug panel (`debugOfferingsInfo()`, from `services/subscription`) dumping RevenueCat's
   raw `getOfferings()` response — added because `console.*` is invisible in a TestFlight build with
-  no Mac/Xcode available for this project. Remove once the underlying empty-offerings bug (see
-  `PRD.md` Section 0 item 30B) is root-caused.
+  no Mac/Xcode available for this project. The bug it was added for is resolved (a RevenueCat
+  dashboard config gap, not code — see `PRD.md` Section 0 item 30C), so this is now dead weight;
+  remove it in a future cleanup pass.
 
 The actual free/paid split per character lives in `src/content/tiers.ts`, not here — this feature
 only enforces whatever that file decides, so the split can change without touching gating logic.

@@ -511,20 +511,37 @@ touched here.
       kept as historical record; the app is iPhone-only for the foreseeable future.**
     - Two genuine em dashes in `PaywallScreen.tsx`'s user-facing copy (not comments) were missed
       when the no-em-dash house style was established elsewhere — fixed.
-    - **Real bug, not yet root-caused**: Subscribe stays disabled and offerings come back empty
-      even with both subscriptions' ASC metadata fully complete (localization, review screenshot,
-      review notes) — status stays "Prepare for Submission" rather than flipping to "Ready to
-      Submit," which multiple developer-forum threads confirm can be normal/misleading rather than
-      indicating missing data, specifically for a *first* subscription tied to the "must submit
-      with a new app version" restriction. Added a temporary on-device diagnostic
-      (`debugOfferingsInfo()` in `revenueCatSubscriptionService.native.ts`, rendered directly on
-      the paywall screen behind the existing empty-plans error message) since `console.*` is
-      invisible in a TestFlight build with no Mac/Xcode available for this project. **The app
-      itself never references App Store product ID strings anywhere in code** — what StoreKit gets
-      asked for is entirely determined by RevenueCat dashboard's "current" Offering configuration,
-      which is the most likely place this is actually broken (not an Apple-review-status problem
-      at all). Build `1.0.0 (6)` has this diagnostic; **next session should read the debug panel's
-      on-screen output first**, before guessing further. Remove the diagnostic once root-caused.
+    - **Empty-offerings bug — root-caused and fixed, RevenueCat dashboard config, not code or
+      Apple review status.** Subscribe stayed disabled with offerings coming back empty even with
+      both subscriptions' ASC metadata fully complete; ASC's "Prepare for Submission" status
+      turned out to be a red herring (multiple developer-forum threads confirm that status can
+      persist even when everything's actually fine, especially for a first subscription tied to
+      the "must submit with a new app version" restriction). Diagnosed with a temporary on-device
+      diagnostic (`debugOfferingsInfo()` in `revenueCatSubscriptionService.native.ts`, rendered
+      directly on the paywall behind the empty-plans error message — `console.*` is invisible in a
+      TestFlight build with no Mac/Xcode available for this project), which surfaced RevenueCat's
+      own error: `"no App Store products registered... for your offerings"`. Real cause: the
+      `default` Offering's Monthly/Yearly packages were still wired to the old **Test Store**
+      products from the original 2026-08-13 dashboard setup (item 20/21), never updated to point
+      at the real App Store products (`com.roshanpoojary.varnatrace.premium.{monthly,yearly}`,
+      created 2026-08-19) even though those were correctly attached to the `premium`
+      *entitlement*. Attaching a product to an entitlement and placing it in an offering's package
+      are two separate RevenueCat steps — doing one doesn't do the other. **Fixed in the RevenueCat
+      dashboard** (Product Catalog → Offerings → default → Edit → each package's "Varna Trace (App
+      Store)" row → select the matching real product), no app deploy needed since it's server-side
+      config. **Verified with a real (Sandbox, zero-charge — TestFlight always routes purchases
+      through Sandbox regardless of which Apple ID is signed in) purchase completing successfully
+      end-to-end.** The `debugOfferingsInfo()` diagnostic is still in the code as of this writing —
+      remove it in a future cleanup pass now that it's served its purpose.
+    - **Real bug found during that purchase test**: after a successful purchase, the header back
+      button pointed at Home showed the literal route filename "index" instead of anything
+      sensible — likely because Apple's system purchase sheet suspends the app, and on return the
+      nav stack can get reconstructed from just the current URL rather than actual history; Home
+      had no `title` set (only `headerShown: false`), so the fallback fell all the way to the raw
+      route name. Fixed by giving `index`'s `Stack.Screen` an explicit `title: 'Home'` in
+      `app/_layout.tsx` — still hidden on Home itself, but now what other screens' back buttons
+      fall back to. **Not yet verified on-device** (needs a new build; deliberately deferred to
+      batch with other changes rather than burning another build cycle for a minor cosmetic fix).
     - Added Hindi localizations for the Monthly/Yearly subscriptions' Display Name/Description
       (real descriptive content, worth translating — used the common loanword "रिन्यू" over the
       more literary "नवीनीकृत" to match how Indian apps actually phrase renewal). Deliberately
@@ -532,14 +549,16 @@ touched here.
       Premium") — that's a brand name, not descriptive text, and brand names don't get translated.
 
 ### Not started
-- **Root-causing the empty-offerings bug** (item 30B) — the actual current blocker. Build `1.0.0
-  (6)` has an on-device diagnostic panel; read its output before guessing further. Most likely a
-  RevenueCat dashboard "current" Offering misconfiguration, not an ASC review-status problem.
+- **Verifying the "index" back-button fix on-device** (item 30C) — code change made, not yet
+  built/tested; deliberately deferred to batch with other changes rather than a build cycle for
+  one minor cosmetic fix.
+- **Removing the temporary `debugOfferingsInfo()` diagnostic** (item 30C) — the empty-offerings
+  bug it was added for is resolved; it's just dead weight in the paywall now, not urgent.
 - **Finishing the first real App Store Connect submission** (item 30B) — subscription metadata is
-  filled in, but the App Store version listing (iPhone-only screenshots, description, keywords,
-  support URL, Privacy Policy URL) hasn't been started; the subscriptions can't be submitted for
-  real review without it, and can't be tested via Sandbox for certain (per the bug above) until
-  they are. Confirm GitHub Pages is actually live for `docs/privacy-policy.html` before submitting.
+  filled in and a real purchase now works end-to-end in Sandbox, but the App Store version listing
+  (iPhone-only screenshots, description, keywords, support URL, Privacy Policy URL) hasn't been
+  started; the subscriptions can't be submitted for real review without it. Confirm GitHub Pages
+  is actually live for `docs/privacy-policy.html` before submitting.
 - **Audio** (reward sounds) — not started.
 - **Android adaptive icon layers + splash screen artwork** — the app icon itself is done (item 27); these are the remaining unstyled placeholder assets, out of scope while iOS is the only real target.
 - **1024×1024 subscription promotional image** (item 25) — deliberately still deferred; only matters for win-back offers, offer codes, or App Store Promotion, none of which are set up. The review screenshot itself (also item 25) is now done — see item 30B.
@@ -553,12 +572,16 @@ A separate pass audited the pre-redesign flat `App.tsx` screen against professio
 - **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html` for Hindi, `tools/stroke-tracer-english.html` for English letters — same tool, different character list/font) that the user runs themselves — served locally (`npx serve tools` or `python -m http.server`) and used from a phone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. Two secondary approaches were tried and superseded for specific cases: auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`, used for one Hindi vowel's fallback base only) and procedural geometry generation (`tools/generate_english_number_strokes.py`, still actually in use for 10 of the 26 English letters — see item 6 above — after hand-tracing repeatedly out-performed it on proportion/centering issues that took several review rounds to pin down). See `docs/devanagari-stroke-data.md` and `docs/english-numbers-content-pipeline.md` for why and how.
 
 ### Where to look next
-- **The empty-offerings bug (item 30B) is the natural next step** — install build `1.0.0 (6)` (or
-  later) via TestFlight, open the paywall, and read the on-device debug panel's output first. It's
-  most likely a RevenueCat dashboard "current" Offering configuration issue, not code — the app
-  never references App Store product ID strings directly (see `debugOfferingsInfo()` in
-  `revenueCatSubscriptionService.native.ts`, added specifically because `console.*` is invisible
-  without a Mac/Xcode). Remove that diagnostic once root-caused.
+- **Finishing the App Store Connect submission (item 30B "Not started" above) is the natural next
+  step** — real purchases now work end-to-end; what's left is the App Store version listing
+  (iPhone-only screenshots, description, keywords, support URL, Privacy Policy URL), then
+  attaching the subscriptions and submitting for real review. The empty-offerings bug that used to
+  block this is resolved (item 30C).
+- If offerings ever come back empty again, check the RevenueCat dashboard first, not the app:
+  Product Catalog → Offerings → your offering → each package's per-store product row. A product
+  attached to the `premium` *entitlement* does not automatically mean it's placed in an *offering's
+  package* — those are two separate steps, and this exact gap (packages still pointing at old Test
+  Store products instead of the real App Store ones) was the actual cause last time.
 - `src/services/subscription/` — `SubscriptionService.ts` (the interface, including `SubscriptionPlan`/`SubscriptionPlanOption`), `config.ts` (API key + entitlement id — real production `appl_` key as of item 25), `planForPackageType.ts` (the only place Monthly/Yearly-only is enforced), `index.ts` vs `index.native.ts` (the web/native platform split — read the comments in both before changing either, since getting this wrong risks breaking the web dev workflow).
 - `docs/privacy-policy.html` + GitHub Pages — confirm Pages is actually enabled (`master` branch,
   `/docs` folder) before relying on `https://roshanp25.github.io/VarnaTrace/privacy-policy.html`,
