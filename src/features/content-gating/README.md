@@ -11,12 +11,7 @@ the real-time subscription entitlement (`src/services/subscription/`) — not a 
   `allCharacters`. Also carries the price/duration/auto-renewal disclosure and Privacy
   Policy/Terms of Use links App Review Guideline 3.1.2 requires on the same screen as the purchase
   button (`docs/privacy-policy.html` served via GitHub Pages; Terms points at Apple's own standard
-  EULA). When `getAvailablePlans()` comes back empty, it currently also renders a **temporary**
-  on-device debug panel (`debugOfferingsInfo()`, from `services/subscription`) dumping RevenueCat's
-  raw `getOfferings()` response — added because `console.*` is invisible in a TestFlight build with
-  no Mac/Xcode available for this project. The bug it was added for is resolved (a RevenueCat
-  dashboard config gap, not code — see `PRD.md` Section 0 item 30C), so this is now dead weight;
-  remove it in a future cleanup pass.
+  EULA).
 
 The actual free/paid split per character lives in `src/content/tiers.ts`, not here — this feature
 only enforces whatever that file decides, so the split can change without touching gating logic.

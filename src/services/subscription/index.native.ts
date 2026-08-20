@@ -1,4 +1,4 @@
-import { debugOfferingsInfo, revenueCatSubscriptionService } from './revenueCatSubscriptionService.native';
+import { revenueCatSubscriptionService } from './revenueCatSubscriptionService.native';
 import { SubscriptionService } from './SubscriptionService';
 import { withDevPaywallBypass } from './devPaywallBypass';
 
@@ -8,8 +8,6 @@ export type {
   SubscriptionPlan,
   SubscriptionPlanOption,
 } from './SubscriptionService';
-
-export { debugOfferingsInfo };
 
 /**
  * Metro picks this file (not ./index.ts) for iOS/Android automatically, based on the `.native.ts`

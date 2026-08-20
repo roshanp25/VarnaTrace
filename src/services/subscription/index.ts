@@ -18,8 +18,3 @@ export type {
 export const subscriptionService: SubscriptionService = withDevPaywallBypass(
   notConfiguredSubscriptionService,
 );
-
-/** Web counterpart to the native diagnostic of the same name — see revenueCatSubscriptionService.native.ts. */
-export async function debugOfferingsInfo(): Promise<string> {
-  return 'debugOfferingsInfo is native-only (no RevenueCat on web)';
-}

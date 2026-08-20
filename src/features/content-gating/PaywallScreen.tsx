@@ -5,7 +5,6 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { allCharacters } from '../../content';
 import { analyticsService } from '../../services/analytics';
 import {
-  debugOfferingsInfo,
   subscriptionService,
   SubscriptionPlan,
   SubscriptionPlanOption,
@@ -46,13 +45,9 @@ export function PaywallScreen() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [lastActionFailed, setLastActionFailed] = useState(false);
-  // TEMPORARY: raw RevenueCat diagnostic, visible on-screen since console output is unreachable
-  // in a TestFlight build without Xcode. Remove once the empty-plans issue is root-caused.
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
     void analyticsService.recordPaywallViewed();
-    void debugOfferingsInfo().then(setDebugInfo);
   }, []);
 
   useEffect(() => {
@@ -162,19 +157,9 @@ export function PaywallScreen() {
         </View>
       )}
       {!plansLoading && plans.length === 0 && (
-        <>
-          <Text style={styles.errorText}>
-            Plans aren&apos;t available right now. Check your connection and reopen this screen.
-          </Text>
-          {debugInfo && (
-            <View style={styles.debugBox}>
-              <Text style={styles.debugLabel}>DEBUG (temporary) — getOfferings() result:</Text>
-              <ScrollView style={styles.debugScroll} horizontal>
-                <Text style={styles.debugText}>{debugInfo}</Text>
-              </ScrollView>
-            </View>
-          )}
-        </>
+        <Text style={styles.errorText}>
+          Plans aren&apos;t available right now. Check your connection and reopen this screen.
+        </Text>
       )}
 
       <Pressable
@@ -242,7 +227,7 @@ const styles = StyleSheet.create({
   },
   // Used as the Subscribe branch's ScrollView contentContainerStyle instead of `container` above,
   // so the (usually short) content still centers vertically via flexGrow, but can grow taller and
-  // actually scroll when the temporary debug box below makes it overflow the screen.
+  // actually scroll if content ever overflows the screen.
   scrollContent: {
     flexGrow: 1,
     alignItems: 'center',
@@ -250,28 +235,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 32,
     gap: 12,
-  },
-  debugBox: {
-    alignSelf: 'stretch',
-    backgroundColor: Colors.ink,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 8,
-    maxHeight: 220,
-  },
-  debugLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.gold,
-    marginBottom: 6,
-  },
-  debugScroll: {
-    maxHeight: 190,
-  },
-  debugText: {
-    fontSize: 11,
-    color: Colors.paper,
-    fontFamily: 'monospace',
   },
   title: {
     fontSize: 24,
