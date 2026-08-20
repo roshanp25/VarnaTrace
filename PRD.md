@@ -2,7 +2,7 @@
 
 Status: **DRAFT — awaiting formal review**, but implementation has proceeded past several open
 decisions below via direct confirmation during build sessions — see Section 0.
-Last updated: 2026-08-16
+Last updated: 2026-08-19
 
 App Store listing:
 - App Name: ~~VarnaTrace: English & Hindi~~ **Varna Trace: Hindi Writing** (26 chars) — renamed
@@ -462,11 +462,88 @@ touched here.
     a trace screen (fire-and-forget promises, inherently low-risk on web since `index.ts`'s methods
     are no-ops there). **All five original "must fix" items are now done.**
 
+30. **First real TestFlight pass on a physical iPhone + first App Store Connect subscription
+    submission attempt (2026-08-19/20 session).** Two workstreams, commits `49fb935` through
+    `9806336`.
+
+    **A. TestFlight feedback fixes.** Real device-only bugs no web preview could have caught:
+    (1) swipe-to-trace conflicted with iOS's native swipe-back gesture — the recognizer runs at
+    the UIKit level, independent of RN's JS `PanResponder`, so claiming the JS responder chain
+    doesn't block it; fixed via `gestureEnabled: false` on the trace screen (`app/trace/[characterId]
+    .tsx`), with the native back button (redundant — it just repeated the screen's own title)
+    replaced by a custom category-tinted pill. (2) Hindi text rendered visibly thinner than
+    English/numbers next to it despite matching `fontWeight` — a custom `fontFamily` ignores
+    `fontWeight` entirely (no synthesized bold), and only `NotoSansDevanagari_400Regular` was ever
+    loaded; added `_700Bold` and a `bold` param on `fontFamilyForScript()` (`src/shared/fonts.ts`).
+    (3) The paywall silently rendered nothing when RevenueCat's `getOfferings()` failed, Subscribe
+    stuck permanently disabled with zero explanation — almost certainly the real cause behind two
+    separate complaints in the same report; `PaywallScreen` now shows a loading state then an
+    actual error message, and the native service catches instead of rejecting. (4) Guided-demo
+    timing reworked (slower; touch now works immediately instead of blocking until the demo
+    finishes) per explicit "it's not for kids anymore" framing — keep defaulting UX/copy to a
+    general audience, not kid-specific, per the 2026-08-17 audience-broadening note above. (5) Home
+    screen redesigned: a continue/streak card and a stats card, backed by new persisted state
+    (`getLastTracedCharacterId`/`getCompletionDates`/`computeStreak` added to `progressService.ts`,
+    tested). The "replay guided demo" pencil button was removed as apparently-redundant (it happens
+    to call the same handler as Clear), then explicitly restored on user request — **don't re-remove
+    it as "redundant" without asking again**, the user wants it kept as a distinct affordance
+    regardless. Screen backgrounds moved off near-white `Colors.paper` to a new warm tan
+    `Colors.background` token app-wide.
+
+    **B. First real subscription submission** (`Varna Trace Premium` group, Monthly $4.99 / Yearly
+    $39.99). Several genuine gotchas, not assumptions:
+    - `.env`'s `EXPO_PUBLIC_DEV_BYPASS_PAYWALL=true` would have shipped straight into a real build —
+      `.easignore`'s mere *presence* stops EAS Build from falling back to `.gitignore`'s rules, so
+      `.env`/`.env.local` needed listing there explicitly too.
+    - `eas submit --non-interactive` needs `ascAppId` set in `eas.json`'s submit profile, or it
+      fails with "Set ascAppId in the submit profile... or re-run in interactive mode" — not
+      obviously required until it fails.
+    - App Review Guideline 3.1.2 requires price/duration/auto-renewal terms and Privacy
+      Policy/Terms of Use links reachable from the *same screen* as the purchase button, not just
+      App Store Connect metadata. Added `docs/privacy-policy.html` (meant to be served via GitHub
+      Pages — confirm this was actually enabled before relying on the link) and linked Apple's own
+      standard EULA (`apple.com/legal/internet-services/itunes/dev/stdeula/`) directly on
+      `PaywallScreen`, since the app has no terms beyond Apple's own.
+    - Dropped `app.json`'s `supportsTablet` to `false` (was `true`) — the only iPad available is on
+      a different Apple ID, and external TestFlight testing now takes 2-7+ days per Apple's Beta
+      App Review, so claiming iPad support that's never been laid out or tested for wasn't worth
+      it. **Section 2 below still says "Target platform: iPadOS only" — that line is now stale,
+      kept as historical record; the app is iPhone-only for the foreseeable future.**
+    - Two genuine em dashes in `PaywallScreen.tsx`'s user-facing copy (not comments) were missed
+      when the no-em-dash house style was established elsewhere — fixed.
+    - **Real bug, not yet root-caused**: Subscribe stays disabled and offerings come back empty
+      even with both subscriptions' ASC metadata fully complete (localization, review screenshot,
+      review notes) — status stays "Prepare for Submission" rather than flipping to "Ready to
+      Submit," which multiple developer-forum threads confirm can be normal/misleading rather than
+      indicating missing data, specifically for a *first* subscription tied to the "must submit
+      with a new app version" restriction. Added a temporary on-device diagnostic
+      (`debugOfferingsInfo()` in `revenueCatSubscriptionService.native.ts`, rendered directly on
+      the paywall screen behind the existing empty-plans error message) since `console.*` is
+      invisible in a TestFlight build with no Mac/Xcode available for this project. **The app
+      itself never references App Store product ID strings anywhere in code** — what StoreKit gets
+      asked for is entirely determined by RevenueCat dashboard's "current" Offering configuration,
+      which is the most likely place this is actually broken (not an Apple-review-status problem
+      at all). Build `1.0.0 (6)` has this diagnostic; **next session should read the debug panel's
+      on-screen output first**, before guessing further. Remove the diagnostic once root-caused.
+    - Added Hindi localizations for the Monthly/Yearly subscriptions' Display Name/Description
+      (real descriptive content, worth translating — used the common loanword "रिन्यू" over the
+      more literary "नवीनीकृत" to match how Indian apps actually phrase renewal). Deliberately
+      skipped a Hindi localization for the Subscription *Group's* own display name ("Varna Trace
+      Premium") — that's a brand name, not descriptive text, and brand names don't get translated.
+
 ### Not started
-- **Real device verification of the RevenueCat integration** — needs an Expo Dev Client or EAS build; nothing about items 20-21/25 has been exercised on an actual device yet. The dashboard and App Store Connect are now correctly configured (entitlement `premium`, both real Monthly/Yearly products attached, production key wired into code) as far as could be checked from the dashboards — first real proof this all actually works is a device build.
+- **Root-causing the empty-offerings bug** (item 30B) — the actual current blocker. Build `1.0.0
+  (6)` has an on-device diagnostic panel; read its output before guessing further. Most likely a
+  RevenueCat dashboard "current" Offering misconfiguration, not an ASC review-status problem.
+- **Finishing the first real App Store Connect submission** (item 30B) — subscription metadata is
+  filled in, but the App Store version listing (iPhone-only screenshots, description, keywords,
+  support URL, Privacy Policy URL) hasn't been started; the subscriptions can't be submitted for
+  real review without it, and can't be tested via Sandbox for certain (per the bug above) until
+  they are. Confirm GitHub Pages is actually live for `docs/privacy-policy.html` before submitting.
 - **Audio** (reward sounds) — not started.
 - **Android adaptive icon layers + splash screen artwork** — the app icon itself is done (item 27); these are the remaining unstyled placeholder assets, out of scope while iOS is the only real target.
-- **ASC subscription review screenshot + 1024×1024 promotional image** (item 25) — both deferred; neither blocks anything today (subscriptions work for entitlement/testing purposes without them), but the review screenshot is required before actually submitting for App Review. The screenshot specifically needs either a real device/simulator paywall render (unavailable here) or a small temporary dev-only override to fake plan data for a browser screenshot (discussed, not built) — do this closer to actual submission time, not now.
+- **1024×1024 subscription promotional image** (item 25) — deliberately still deferred; only matters for win-back offers, offer codes, or App Store Promotion, none of which are set up. The review screenshot itself (also item 25) is now done — see item 30B.
+- **iPad support** — dropped (item 30B), not just deferred. Revisit deliberately later, with a real way to test it, rather than re-enabling `supportsTablet` passively.
 
 ### UX redesign session (2026-08-11)
 A separate pass audited the pre-redesign flat `App.tsx` screen against professional UX standards, produced five mockup screens (Home, category grid, tracing, reward, paywall teaser — not persisted in-repo, they were review artifacts), and implemented four of them one at a time as Steps 1–4 above (items 8–14). **Step 5 — content-gating enforcement, the parental gate, and the paywall teaser — is now fully done (items 17-21), including a real (Test-Store-backed) purchase flow with a proper plan picker.**
@@ -476,8 +553,16 @@ A separate pass audited the pre-redesign flat `App.tsx` screen against professio
 - **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html` for Hindi, `tools/stroke-tracer-english.html` for English letters — same tool, different character list/font) that the user runs themselves — served locally (`npx serve tools` or `python -m http.server`) and used from a phone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. Two secondary approaches were tried and superseded for specific cases: auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`, used for one Hindi vowel's fallback base only) and procedural geometry generation (`tools/generate_english_number_strokes.py`, still actually in use for 10 of the 26 English letters — see item 6 above — after hand-tracing repeatedly out-performed it on proportion/centering issues that took several review rounds to pin down). See `docs/devanagari-stroke-data.md` and `docs/english-numbers-content-pipeline.md` for why and how.
 
 ### Where to look next
-- **Real device verification of the RevenueCat integration** is the natural next step — see "Not started" above. The dashboard should now be correctly configured (see item 21); this needs an Expo Dev Client / EAS build to actually prove it.
-- `src/services/subscription/` — `SubscriptionService.ts` (the interface, including `SubscriptionPlan`/`SubscriptionPlanOption`), `config.ts` (API key + entitlement id — currently a Test Store key), `planForPackageType.ts` (the only place Monthly/Yearly-only is enforced), `index.ts` vs `index.native.ts` (the web/native platform split — read the comments in both before changing either, since getting this wrong risks breaking the web dev workflow).
+- **The empty-offerings bug (item 30B) is the natural next step** — install build `1.0.0 (6)` (or
+  later) via TestFlight, open the paywall, and read the on-device debug panel's output first. It's
+  most likely a RevenueCat dashboard "current" Offering configuration issue, not code — the app
+  never references App Store product ID strings directly (see `debugOfferingsInfo()` in
+  `revenueCatSubscriptionService.native.ts`, added specifically because `console.*` is invisible
+  without a Mac/Xcode). Remove that diagnostic once root-caused.
+- `src/services/subscription/` — `SubscriptionService.ts` (the interface, including `SubscriptionPlan`/`SubscriptionPlanOption`), `config.ts` (API key + entitlement id — real production `appl_` key as of item 25), `planForPackageType.ts` (the only place Monthly/Yearly-only is enforced), `index.ts` vs `index.native.ts` (the web/native platform split — read the comments in both before changing either, since getting this wrong risks breaking the web dev workflow).
+- `docs/privacy-policy.html` + GitHub Pages — confirm Pages is actually enabled (`master` branch,
+  `/docs` folder) before relying on `https://roshanp25.github.io/VarnaTrace/privacy-policy.html`,
+  which `PaywallScreen` now links directly.
 - `src/content/tiers.ts` — the single free/paid list; edit this to move a character between tiers.
 - `docs/devanagari-stroke-data.md` — the Hindi stroke-data pipeline in full: the hand-tracing tool workflow, the validation/repair tooling, data provenance, and (now done) how the conjuncts were added.
 - `docs/english-numbers-content-pipeline.md` — the English/numbers pipeline: the hand-tracing tool, the two import scripts, and the size-normalization pass, including the reasoning behind several rejected approaches (worth reading before touching `tools/normalize_sizes.py`, so a fix already tried and reverted doesn't get retried).
@@ -506,7 +591,7 @@ If any of these are wrong, tell me and I'll update this doc before we touch code
 
 VarnaTrace is an offline, iPad-first tracing app that teaches UKG-age (5–6 year old) Indian preschoolers to handwrite the English alphabet, the Hindi varnamala, and numbers 1–50, using deterministic path-matching (not ML/handwriting recognition) to score how well a child traces a predefined stencil.
 
-Target platform: iPadOS only (no iPhone-specific UI in MVP). ~~Built for Apple's Kids Category, which drives several hard constraints (no ads, no third-party analytics, no accounts, parental gate before any commerce).~~ **No longer targeting Kids Category as of 2026-08-18 — see Section 0 item 23.** This was the original spec's positioning; kept here as historical record.
+~~Target platform: iPadOS only (no iPhone-specific UI in MVP).~~ **iPhone is the real target as of 2026-08-19/20 — `supportsTablet` is off, see Section 0 item 30B.** The only iPad available for testing is on a different Apple ID, and getting a build to it now takes days via Apple's Beta App Review, so iPad support was dropped rather than shipped unverified. Revisit deliberately later. ~~Built for Apple's Kids Category, which drives several hard constraints (no ads, no third-party analytics, no accounts, parental gate before any commerce).~~ **No longer targeting Kids Category as of 2026-08-18 — see Section 0 item 23.** This was the original spec's positioning; kept here as historical record.
 
 ---
 

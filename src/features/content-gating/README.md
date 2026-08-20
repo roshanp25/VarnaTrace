@@ -8,7 +8,14 @@ the real-time subscription entitlement (`src/services/subscription/`) — not a 
   active subscription.
 - `PaywallScreen.tsx` — the subscribe/restore screen, with a live plan picker
   (`subscriptionService.getAvailablePlans()`) and a live paid-character count from
-  `allCharacters`.
+  `allCharacters`. Also carries the price/duration/auto-renewal disclosure and Privacy
+  Policy/Terms of Use links App Review Guideline 3.1.2 requires on the same screen as the purchase
+  button (`docs/privacy-policy.html` served via GitHub Pages; Terms points at Apple's own standard
+  EULA). When `getAvailablePlans()` comes back empty, it currently also renders a **temporary**
+  on-device debug panel (`debugOfferingsInfo()`, from `services/subscription`) dumping RevenueCat's
+  raw `getOfferings()` response — added because `console.*` is invisible in a TestFlight build with
+  no Mac/Xcode available for this project. Remove once the underlying empty-offerings bug (see
+  `PRD.md` Section 0 item 30B) is root-caused.
 
 The actual free/paid split per character lives in `src/content/tiers.ts`, not here — this feature
 only enforces whatever that file decides, so the split can change without touching gating logic.
