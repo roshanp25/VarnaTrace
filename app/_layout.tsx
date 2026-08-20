@@ -27,7 +27,10 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: Colors.background },
         }}
       >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        {/* title is set even though the header itself is hidden here — it's still the fallback
+            back-button label any other screen navigating back to Home falls back to (otherwise
+            it shows the literal route filename, "index"). */}
+        <Stack.Screen name="index" options={{ headerShown: false, title: 'Home' }} />
         <Stack.Screen name="english" options={{ title: SCRIPT_LABELS.english }} />
         <Stack.Screen name="hindi" options={{ title: SCRIPT_LABELS.hindi }} />
         <Stack.Screen name="number" options={{ title: SCRIPT_LABELS.number }} />
