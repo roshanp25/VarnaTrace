@@ -2,7 +2,7 @@
 
 Status: **DRAFT — awaiting formal review**, but implementation has proceeded past several open
 decisions below via direct confirmation during build sessions — see Section 0.
-Last updated: 2026-08-19
+Last updated: 2026-08-20
 
 App Store listing:
 - App Name: ~~VarnaTrace: English & Hindi~~ **Varna Trace: Hindi Writing** (26 chars) — renamed
@@ -548,21 +548,93 @@ touched here.
       skipped a Hindi localization for the Subscription *Group's* own display name ("Varna Trace
       Premium") — that's a brand name, not descriptive text, and brand names don't get translated.
 
+    **D. App Store Connect listing walkthrough (2026-08-20), live in the dashboard — no code
+    changes except `docs/support.html` (commit `ad6367c`).** Went field-by-field through the
+    version/App Information pages the user had open, decision by decision:
+    - **Support page added**, same GitHub Pages setup as the privacy policy:
+      `docs/support.html` → `https://roshanp25.github.io/VarnaTrace/support.html` (contact email,
+      a short FAQ, links to Privacy Policy and Apple's standard EULA).
+    - **Drafted, not yet confirmed-saved in ASC**: app Description, Promotional Text, Keywords
+      (`devanagari,handwriting,alphabet,tracing,learn hindi,numbers,varnamala,letters,practice,kids`),
+      Copyright (`© 2026 Roshan Poojary`), Category (Education, no secondary), App Review Notes
+      (explains no-login/free-tier/paywall-location for the reviewer). **Subtitle was already
+      decided in an earlier session** ("Write the Hindi you speak," item 24) — not new.
+    - **App-Specific Shared Secret**: correctly left unset — legacy StoreKit 1 receipt-validation
+      mechanism; RevenueCat already uses the modern App Store Connect API key (In-App Purchase
+      Key) approach instead, set up back in item 25.
+    - **Accessibility declarations**: none checked, deliberately. Audited each claim against
+      actual app behavior rather than guessing — the app pins light mode only (`userInterfaceStyle:
+      "light"`), has no Dynamic Type support (hardcoded font sizes throughout), doesn't check
+      `AccessibilityInfo` for reduced-motion, and the core tracing mechanic (touch-drawing on a
+      canvas) has no non-visual feedback loop, so VoiceOver/Voice Control claims would be actively
+      misleading. **Initially misjudged "Sufficient Contrast" as valid** (conflated the app's
+      verified-good *static* color contrast with the feature's actual definition — a *user-facing
+      adjustable* contrast control, which the app doesn't have) — caught and corrected after the
+      user pushed back by re-reading Apple's own definition. **Worth remembering: read the exact
+      feature definition before claiming it, a plausible-sounding proxy isn't the same claim.**
+    - **Age Rating**: moved to a different tab than expected (App Information, not the version
+      page) — walked through the full current (2026) questionnaire including the new
+      social-media/medical/in-app-controls categories; every category answers "None"/"No" for this
+      app, landing on 4+. Age Category Override: **Not Applicable** (not "Made for Kids" — that
+      would reintroduce exactly the Kids Category constraints exited in item 23).
+    - **Pricing and Availability**: app price **Free** (Tier 0) — required, blocks submission
+      until set — with the paid tier living entirely in the subscription, not the app download.
+      Availability: all countries/regions. Distribution: **Public** (not the Business/School
+      Manager private options).
+    - **Dropped Apple Silicon Mac availability** — the sidebar had shown a separate, unexpected
+      "macOS App" listing; the user confirmed they'd added it themselves at some point without
+      thinking it through. Same reasoning as the iPad drop (item 30B), actually stronger: zero way
+      to test it at all (no Mac for this project, not even a different-Apple-ID workaround like
+      the iPad had), and the core `PanResponder` touch mechanic has no verified mouse/trackpad
+      equivalent. Fixed via the "Make this app available" checkbox under Apple Silicon Mac
+      Availability on the Pricing and Availability page (unchecked) — that's the actual control
+      behind the separate platform listing, not something removable from the sidebar directly.
+      Apple Vision Pro availability left unchecked for the identical reason.
+    - **Billing Grace Period**: set up (16 days, **paid-to-paid renewals only** — not "all
+      renewals," specifically to avoid a trial-to-paid exploit vector even though the app has no
+      free trial configured today — and **Production and Sandbox**, since Sandbox-only would make
+      the whole protection inert for real subscribers). Unlike the marketing-scale features below,
+      this one was actively recommended, not skipped — it's a real, no-downside protection against
+      losing subscribers to transient failed renewals, useful from day one regardless of install
+      volume.
+    - **Deliberately skipped, all judged premature rather than wrong**: Custom Product Pages,
+      Product Page Optimization (both need real install/traffic volume to mean anything — none
+      exists pre-launch), Promo Codes (literally unavailable until the app has an approved
+      version, per Apple's own UI), a general "In-App Purchase" product (the app only sells
+      auto-renewable subscriptions, already fully configured separately), and Non-Renewing
+      Subscriptions (same reason).
+
 ### Not started
+- **App Store screenshots — the actual next step.** Not touched yet at all (item 30D only covered
+  text fields/settings). Need iPhone screenshots at one required size (6.9" or 6.5", 1-10 images)
+  showing real app screens (Home, a category grid, tracing). Can be generated the same way the
+  subscription review screenshot was (headless-browser capture of the real web-preview app,
+  upscaled to exact Apple pixel dimensions — see item 30B for the technique and its gotchas).
+- **Attach build `1.0.0 (6)` to the App Store version** — required before any submission is
+  possible; not yet confirmed done.
+- **Confirm the item 30D field values were actually saved in ASC**, not just discussed — worth a
+  quick pass before submitting: Description/Promotional Text/Keywords/Copyright/Category, Age
+  Rating questionnaire submitted, Age Category Override, Pricing ($0/all countries), Mac/Vision
+  Pro unchecked, Billing Grace Period, Privacy Policy URL pasted into App Information, App Review
+  Notes + Contact Information (**use your own info, not a repeat of the earlier
+  wife's-email-in-the-wrong-field mix-up**).
+- **"What's New in This Version"** — likely optional for a first submission, but check; "Initial
+  release" is fine if something's required.
+- Once all of the above: **Add for Review on both subscriptions** (attach to this version), then
+  **submit the version itself** for real App Store review. This is the actual finish line.
 - **Verifying the "index" back-button fix on-device** (item 30C) — code change made, not yet
   built/tested; deliberately deferred to batch with other changes rather than a build cycle for
   one minor cosmetic fix.
 - **Removing the temporary `debugOfferingsInfo()` diagnostic** (item 30C) — the empty-offerings
   bug it was added for is resolved; it's just dead weight in the paywall now, not urgent.
-- **Finishing the first real App Store Connect submission** (item 30B) — subscription metadata is
-  filled in and a real purchase now works end-to-end in Sandbox, but the App Store version listing
-  (iPhone-only screenshots, description, keywords, support URL, Privacy Policy URL) hasn't been
-  started; the subscriptions can't be submitted for real review without it. Confirm GitHub Pages
-  is actually live for `docs/privacy-policy.html` before submitting.
 - **Audio** (reward sounds) — not started.
 - **Android adaptive icon layers + splash screen artwork** — the app icon itself is done (item 27); these are the remaining unstyled placeholder assets, out of scope while iOS is the only real target.
 - **1024×1024 subscription promotional image** (item 25) — deliberately still deferred; only matters for win-back offers, offer codes, or App Store Promotion, none of which are set up. The review screenshot itself (also item 25) is now done — see item 30B.
 - **iPad support** — dropped (item 30B), not just deferred. Revisit deliberately later, with a real way to test it, rather than re-enabling `supportsTablet` passively.
+- **Real accessibility support (VoiceOver, Dynamic Type, Reduced Motion, adjustable contrast)** —
+  none currently implemented (item 30D). Dynamic Type + a contrast-adjustment feature are the
+  cheaper starting points if ever revisited; VoiceOver support for a spatial tracing task is a
+  much bigger design problem, not a quick add.
 
 ### UX redesign session (2026-08-11)
 A separate pass audited the pre-redesign flat `App.tsx` screen against professional UX standards, produced five mockup screens (Home, category grid, tracing, reward, paywall teaser — not persisted in-repo, they were review artifacts), and implemented four of them one at a time as Steps 1–4 above (items 8–14). **Step 5 — content-gating enforcement, the parental gate, and the paywall teaser — is now fully done (items 17-21), including a real (Test-Store-backed) purchase flow with a proper plan picker.**
@@ -572,11 +644,11 @@ A separate pass audited the pre-redesign flat `App.tsx` screen against professio
 - **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html` for Hindi, `tools/stroke-tracer-english.html` for English letters — same tool, different character list/font) that the user runs themselves — served locally (`npx serve tools` or `python -m http.server`) and used from a phone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. Two secondary approaches were tried and superseded for specific cases: auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`, used for one Hindi vowel's fallback base only) and procedural geometry generation (`tools/generate_english_number_strokes.py`, still actually in use for 10 of the 26 English letters — see item 6 above — after hand-tracing repeatedly out-performed it on proportion/centering issues that took several review rounds to pin down). See `docs/devanagari-stroke-data.md` and `docs/english-numbers-content-pipeline.md` for why and how.
 
 ### Where to look next
-- **Finishing the App Store Connect submission (item 30B "Not started" above) is the natural next
-  step** — real purchases now work end-to-end; what's left is the App Store version listing
-  (iPhone-only screenshots, description, keywords, support URL, Privacy Policy URL), then
-  attaching the subscriptions and submitting for real review. The empty-offerings bug that used to
-  block this is resolved (item 30C).
+- **Screenshots are the natural next step** (see "Not started" above) — every text field and
+  toggle on the App Store Connect listing was walked through in item 30D, but no screenshots exist
+  yet. After that: attach build `1.0.0 (6)`, do a final pass confirming everything from 30D was
+  actually saved (not just discussed), then Add for Review on both subscriptions + submit the
+  version. Real purchases already work end-to-end (item 30C) — this is genuinely the last stretch.
 - If offerings ever come back empty again, check the RevenueCat dashboard first, not the app:
   Product Catalog → Offerings → your offering → each package's per-store product row. A product
   attached to the `premium` *entitlement* does not automatically mean it's placed in an *offering's
