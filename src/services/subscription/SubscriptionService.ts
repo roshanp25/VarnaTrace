@@ -20,6 +20,8 @@ export interface SubscriptionPlanOption {
   plan: SubscriptionPlan;
   /** Formatted, localized price string from the store, e.g. "$4.99". */
   priceString: string;
+  /** Formatted free-trial description, e.g. "7 days free". Null if this plan has no active trial. */
+  trialDescription: string | null;
 }
 
 /**

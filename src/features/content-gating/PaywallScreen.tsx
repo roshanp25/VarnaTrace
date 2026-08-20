@@ -30,9 +30,9 @@ const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/d
  * Reached directly from a locked tile (no parental gate in front of it — that was a Kids Category
  * requirement, removed once the app stopped targeting that category; real purchases still go
  * through Apple's own StoreKit confirmation regardless). Subscribe/restore call the real
- * `subscriptionService` — on native that's RevenueCat (currently a Test Store key, so nothing
- * here is a real purchase yet); on web it's a fail-closed stub, so plans come back empty and both
- * buttons harmlessly report failure there. This app only sells monthly/yearly — a Lifetime package
+ * `subscriptionService` — on native that's RevenueCat, configured with the real production API
+ * key, so purchases here are real; on web it's a fail-closed stub, so plans come back empty and
+ * both buttons harmlessly report failure there. This app only sells monthly/yearly — a Lifetime package
  * may exist in the RevenueCat dashboard, but `getAvailablePlans()` never surfaces it (see
  * `planForPackageType.ts`). "Restore Purchases" is a real UI requirement for any paid
  * subscription, not an optional nicety.
@@ -70,6 +70,8 @@ export function PaywallScreen() {
       cancelled = true;
     };
   }, []);
+
+  const selectedOption = plans.find((option) => option.plan === selectedPlan);
 
   async function handleSubscribe() {
     if (!selectedPlan) {
@@ -144,13 +146,17 @@ export function PaywallScreen() {
                 onPress={() => setSelectedPlan(option.plan)}
                 disabled={isBusy}
               >
-                {option.plan === 'yearly' && (
+                {(option.trialDescription ?? option.plan === 'yearly') && (
                   <View style={styles.planTag}>
-                    <Text style={styles.planTagText}>Best value</Text>
+                    <Text style={styles.planTagText}>
+                      {option.trialDescription ?? 'Best value'}
+                    </Text>
                   </View>
                 )}
                 <Text style={styles.planChipLabel}>{PLAN_LABELS[option.plan]}</Text>
-                <Text style={styles.planChipPrice}>{option.priceString}</Text>
+                <Text style={styles.planChipPrice}>
+                  {option.trialDescription ? `then ${option.priceString}` : option.priceString}
+                </Text>
               </Pressable>
             );
           })}
@@ -168,7 +174,13 @@ export function PaywallScreen() {
         disabled={isBusy || !selectedPlan}
       >
         <Text style={styles.ctaText}>
-          {isBusy ? 'Please wait…' : plansLoading ? 'Loading…' : 'Subscribe'}
+          {isBusy
+            ? 'Please wait…'
+            : plansLoading
+              ? 'Loading…'
+              : selectedOption?.trialDescription
+                ? 'Start Free Trial'
+                : 'Subscribe'}
         </Text>
       </Pressable>
       <Pressable style={styles.restoreButton} onPress={handleRestore} disabled={isBusy}>
@@ -179,7 +191,9 @@ export function PaywallScreen() {
       )}
 
       <Text style={styles.renewalNotice}>
-        Auto-renews until canceled. Cancel anytime in Settings.
+        {selectedOption?.trialDescription
+          ? `${selectedOption.trialDescription}, then ${selectedOption.priceString}. Auto-renews until canceled. Cancel anytime in Settings.`
+          : 'Auto-renews until canceled. Cancel anytime in Settings.'}
       </Text>
       <View style={styles.legalRow}>
         <Pressable onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>

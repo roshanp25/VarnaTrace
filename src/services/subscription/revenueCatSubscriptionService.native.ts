@@ -1,6 +1,7 @@
 import Purchases, { PurchasesPackage } from 'react-native-purchases';
 
 import { ENTITLEMENT_ID, REVENUECAT_API_KEY } from './config';
+import { describeIntroOffer } from './describeIntroOffer';
 import { isEntitlementActive } from './isEntitlementActive';
 import { planForPackageType } from './planForPackageType';
 import { SubscriptionPlan, SubscriptionPlanOption, SubscriptionService } from './SubscriptionService';
@@ -34,7 +35,11 @@ export const revenueCatSubscriptionService: SubscriptionService = {
       for (const pkg of packages) {
         const plan = planForPackageType(pkg.packageType);
         if (plan) {
-          options.push({ plan, priceString: pkg.product.priceString });
+          options.push({
+            plan,
+            priceString: pkg.product.priceString,
+            trialDescription: describeIntroOffer(pkg.product.introPrice),
+          });
         }
       }
       return options;

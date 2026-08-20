@@ -5,7 +5,7 @@ const fakeService: SubscriptionService = {
     return { isActive: false };
   },
   async getAvailablePlans() {
-    return [{ plan: 'monthly', priceString: '$4.99' }];
+    return [{ plan: 'monthly', priceString: '$4.99', trialDescription: null }];
   },
   async purchaseSubscription() {
     return { success: true };
@@ -52,7 +52,9 @@ describe('withDevPaywallBypass', () => {
 
     const wrapped = withDevPaywallBypass(fakeService);
 
-    await expect(wrapped.getAvailablePlans()).resolves.toEqual([{ plan: 'monthly', priceString: '$4.99' }]);
+    await expect(wrapped.getAvailablePlans()).resolves.toEqual([
+      { plan: 'monthly', priceString: '$4.99', trialDescription: null },
+    ]);
     await expect(wrapped.purchaseSubscription('monthly')).resolves.toEqual({ success: true });
     await expect(wrapped.restorePurchases()).resolves.toEqual({ success: true });
   });
