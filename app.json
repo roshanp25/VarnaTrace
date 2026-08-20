@@ -8,7 +8,7 @@
     "scheme": "varnatrace",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.roshanpoojary.varnatrace",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
