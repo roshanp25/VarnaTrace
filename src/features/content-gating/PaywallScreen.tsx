@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { allCharacters } from '../../content';
@@ -15,6 +15,16 @@ const PLAN_LABELS: Record<SubscriptionPlan, string> = {
   monthly: 'Monthly',
   yearly: 'Yearly',
 };
+
+/**
+ * App Review Guideline 3.1.2 requires both links to be reachable from the same screen as the
+ * purchase button, not just listed in App Store Connect metadata. Terms of Use points at Apple's
+ * own standard EULA (https://www.apple.com/legal/internet-services/itunes/dev/stdeula/) rather
+ * than a custom one — the app has no terms beyond Apple's own, so there's nothing a custom EULA
+ * would add. Privacy Policy is hosted from this repo's docs/ folder via GitHub Pages.
+ */
+const PRIVACY_POLICY_URL = 'https://roshanp25.github.io/VarnaTrace/privacy-policy.html';
+const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 /**
  * Reached directly from a locked tile (no parental gate in front of it — that was a Kids Category
@@ -167,6 +177,19 @@ export function PaywallScreen() {
       {lastActionFailed && (
         <Text style={styles.errorText}>That didn&apos;t go through — please try again.</Text>
       )}
+
+      <Text style={styles.renewalNotice}>
+        Auto-renews until canceled. Cancel anytime in Settings.
+      </Text>
+      <View style={styles.legalRow}>
+        <Pressable onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+          <Text style={styles.legalLink}>Privacy Policy</Text>
+        </Pressable>
+        <Text style={styles.legalSeparator}>·</Text>
+        <Pressable onPress={() => Linking.openURL(TERMS_OF_USE_URL)}>
+          <Text style={styles.legalLink}>Terms of Use</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -295,5 +318,26 @@ const styles = StyleSheet.create({
     color: Colors.neutralText,
     textAlign: 'center',
     marginTop: 4,
+  },
+  renewalNotice: {
+    fontSize: 11,
+    color: Colors.neutralMuted,
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  legalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  legalLink: {
+    fontSize: 11,
+    color: Colors.neutralText,
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    fontSize: 11,
+    color: Colors.neutralMuted,
   },
 });
