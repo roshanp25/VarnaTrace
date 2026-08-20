@@ -78,3 +78,34 @@ export const revenueCatSubscriptionService: SubscriptionService = {
     await Purchases.showManageSubscriptions();
   },
 };
+
+/**
+ * TEMPORARY diagnostic, not part of SubscriptionService — deliberately bypasses the
+ * our-own-model abstraction to dump RevenueCat's raw getOfferings() response, since `console.*`
+ * is invisible in a TestFlight build without Xcode attached (no Mac available for this project).
+ * Remove once the empty-plans issue is root-caused. The app itself never requests App Store
+ * product IDs directly — `getOfferings()` returns whatever RevenueCat's dashboard "current"
+ * Offering is configured with, so this is the actual place product-id mismatches would show up.
+ */
+export async function debugOfferingsInfo(): Promise<string> {
+  try {
+    const offerings = await Purchases.getOfferings();
+    return JSON.stringify(
+      {
+        currentOfferingId: offerings.current?.identifier ?? null,
+        currentPackages:
+          offerings.current?.availablePackages.map((pkg) => ({
+            packageIdentifier: pkg.identifier,
+            packageType: pkg.packageType,
+            productIdentifier: pkg.product.identifier,
+            priceString: pkg.product.priceString,
+          })) ?? [],
+        allOfferingIds: Object.keys(offerings.all),
+      },
+      null,
+      2,
+    );
+  } catch (error) {
+    return `getOfferings() threw: ${error instanceof Error ? error.message : String(error)}`;
+  }
+}

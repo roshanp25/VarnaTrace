@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { allCharacters } from '../../content';
 import { analyticsService } from '../../services/analytics';
 import {
+  debugOfferingsInfo,
   subscriptionService,
   SubscriptionPlan,
   SubscriptionPlanOption,
@@ -45,9 +46,13 @@ export function PaywallScreen() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [lastActionFailed, setLastActionFailed] = useState(false);
+  // TEMPORARY: raw RevenueCat diagnostic, visible on-screen since console output is unreachable
+  // in a TestFlight build without Xcode. Remove once the empty-plans issue is root-caused.
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
     void analyticsService.recordPaywallViewed();
+    void debugOfferingsInfo().then(setDebugInfo);
   }, []);
 
   useEffect(() => {
@@ -115,7 +120,7 @@ export function PaywallScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
       <StarIcon />
       <Text style={styles.title}>Subscribe for full access</Text>
       <Text style={styles.body}>
@@ -157,9 +162,19 @@ export function PaywallScreen() {
         </View>
       )}
       {!plansLoading && plans.length === 0 && (
-        <Text style={styles.errorText}>
-          Plans aren&apos;t available right now. Check your connection and reopen this screen.
-        </Text>
+        <>
+          <Text style={styles.errorText}>
+            Plans aren&apos;t available right now. Check your connection and reopen this screen.
+          </Text>
+          {debugInfo && (
+            <View style={styles.debugBox}>
+              <Text style={styles.debugLabel}>DEBUG (temporary) — getOfferings() result:</Text>
+              <ScrollView style={styles.debugScroll} horizontal>
+                <Text style={styles.debugText}>{debugInfo}</Text>
+              </ScrollView>
+            </View>
+          )}
+        </>
       )}
 
       <Pressable
@@ -190,7 +205,7 @@ export function PaywallScreen() {
           <Text style={styles.legalLink}>Terms of Use</Text>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -218,6 +233,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
     gap: 12,
+  },
+  // ScrollView's own `style` may only carry flex/background — alignItems/justifyContent must go
+  // on contentContainerStyle (scrollContent below) or RN throws at runtime.
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  // Used as the Subscribe branch's ScrollView contentContainerStyle instead of `container` above,
+  // so the (usually short) content still centers vertically via flexGrow, but can grow taller and
+  // actually scroll when the temporary debug box below makes it overflow the screen.
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 32,
+    gap: 12,
+  },
+  debugBox: {
+    alignSelf: 'stretch',
+    backgroundColor: Colors.ink,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+    maxHeight: 220,
+  },
+  debugLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.gold,
+    marginBottom: 6,
+  },
+  debugScroll: {
+    maxHeight: 190,
+  },
+  debugText: {
+    fontSize: 11,
+    color: Colors.paper,
+    fontFamily: 'monospace',
   },
   title: {
     fontSize: 24,
