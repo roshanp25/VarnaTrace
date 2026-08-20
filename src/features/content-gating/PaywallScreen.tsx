@@ -119,7 +119,7 @@ export function PaywallScreen() {
       <StarIcon />
       <Text style={styles.title}>Subscribe for full access</Text>
       <Text style={styles.body}>
-        Get every remaining letter, number, and Hindi character — {paidCount} more to trace.
+        Get every remaining letter, number, and Hindi character, {paidCount} more to trace.
       </Text>
 
       <View style={styles.unlockList}>
@@ -175,7 +175,7 @@ export function PaywallScreen() {
         <Text style={styles.restoreButtonText}>Restore Purchases</Text>
       </Pressable>
       {lastActionFailed && (
-        <Text style={styles.errorText}>That didn&apos;t go through — please try again.</Text>
+        <Text style={styles.errorText}>That didn&apos;t go through, please try again.</Text>
       )}
 
       <Text style={styles.renewalNotice}>
