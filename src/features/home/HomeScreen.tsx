@@ -197,11 +197,26 @@ export function HomeScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.wordmark}>
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-          <Path d="M4 19c4-9 8-13 16-15" stroke={Colors.brand} strokeWidth={2.6} strokeLinecap="round" />
-        </Svg>
-        <Text style={styles.wordmarkText}>Varna Trace</Text>
+      <View style={styles.topRow}>
+        <View style={styles.wordmark}>
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+            <Path d="M4 19c4-9 8-13 16-15" stroke={Colors.brand} strokeWidth={2.6} strokeLinecap="round" />
+          </Svg>
+          <Text style={styles.wordmarkText}>Varna Trace</Text>
+        </View>
+        {/* Only in-app entry point to subscription management — CategoryGridScreen's locked-tile
+         * route to /paywall is unreachable once every category is unlocked, so a subscriber would
+         * otherwise have no way to manage/cancel without leaving the app. */}
+        <Pressable
+          accessibilityLabel="Account and subscription"
+          style={styles.accountButton}
+          onPress={() => router.push('/paywall')}
+        >
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+            <Circle cx="12" cy="8" r="4" stroke={Colors.ink} strokeWidth={2} />
+            <Path d="M4 20c1.4-4.2 4.4-6.4 8-6.4s6.6 2.2 8 6.4" stroke={Colors.ink} strokeWidth={2} strokeLinecap="round" />
+          </Svg>
+        </Pressable>
       </View>
       <Text style={styles.tagline}>Write the Hindi you speak, and more</Text>
 
@@ -228,11 +243,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   wordmark: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 4,
+  },
+  accountButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.panel,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   wordmarkText: {
     fontSize: 22,
