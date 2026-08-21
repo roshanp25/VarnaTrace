@@ -27,9 +27,9 @@ const STAR_STAGGER_MS = 110;
 const STAR_REVEAL_MS = 220;
 
 /** Keyed by star count so feedback tone tracks how well the trace actually went, not just pass/fail. */
-const THREE_STAR_MESSAGES = ['Clean strokes.', 'Precise and controlled.', 'Well-formed.', 'Excellent shape.'];
-const TWO_STAR_MESSAGES = ['Good control.', 'Solid strokes.', 'Steady work.', 'On the right track.'];
-const RETRY_MESSAGES = ['Worth another pass.', 'Getting the shape down.', 'Keep at it.', 'Try that again.'];
+const THREE_STAR_MESSAGES = ['Clean strokes', 'Precise and controlled', 'Well-formed', 'Excellent shape'];
+const TWO_STAR_MESSAGES = ['Good control', 'Solid strokes', 'Steady work', 'On the right track'];
+const RETRY_MESSAGES = ['Worth another pass', 'Getting the shape down', 'Keep at it', 'Try that again'];
 
 function starsForScore(score: number, difficulty: Difficulty): number {
   const config = DIFFICULTY_CONFIGS[difficulty];
@@ -211,7 +211,8 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: 999,
-    paddingVertical: 12,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   buttonSecondary: {
@@ -221,6 +222,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: Colors.paper,
+    letterSpacing: 0.2,
   },
   buttonTextSecondary: {
     fontSize: 16,

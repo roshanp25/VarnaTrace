@@ -2,7 +2,7 @@
 
 Status: **DRAFT — awaiting formal review**, but implementation has proceeded past several open
 decisions below via direct confirmation during build sessions — see Section 0.
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
 App Store listing:
 - App Name: ~~VarnaTrace: English & Hindi~~ **Varna Trace: Hindi Writing** (26 chars) — renamed
@@ -604,6 +604,30 @@ touched here.
       auto-renewable subscriptions, already fully configured separately), and Non-Renewing
       Subscriptions (same reason).
 
+31. **Post-walkthrough cleanup + pricing/UX polish (2026-08-20/21), commits `c81a89b` through
+    this session's build.** Small items picked up between the item 30D listing walkthrough and the
+    next TestFlight build, undocumented here until now:
+    - `c81a89b` — removed the temporary `debugOfferingsInfo()` diagnostic (item 30C's root cause is
+      fixed and confirmed; this closes the matching "Not started" bullet below).
+    - `56f403b` — Easy mode's scoring tolerance loosened further and the guide line thickened, after
+      user feedback that a careful trace still couldn't reliably hit ~100%; a careful trace now
+      scores high-90s instead of high-80s.
+    - `14c5ff6` — added a Home-screen account icon that always routes to `/paywall`, fixing a real
+      gap found while shooting a paywall screenshot: once subscribed, every category unlocks and
+      there was no longer any way back into the paywall to reach "Manage Subscription."
+    - `ef3112b` — RevenueCat dashboard prices dropped to $2.99/mo and $17.99/yr with a 7-day free
+      trial added on the yearly plan; `PaywallScreen` now derives trial terms from RevenueCat's
+      introPrice data (new `describeIntroOffer.ts`, tested) and surfaces them on the plan chip, CTA,
+      and renewal notice.
+    - **This session**: two cosmetic fixes to `RewardOverlay.tsx` from direct user feedback —
+      reward messages ("Excellent shape", "On the right track", etc.) had trailing periods that read
+      oddly as short exclamatory phrases, removed from all three message pools; the "Next Letter →"
+      button had `paddingHorizontal: 0` (text ran edge-to-edge, relying only on centering) and a
+      thin `paddingVertical: 12`, bumped to `20`/`15` respectively plus a touch of `letterSpacing`
+      on the button label. Verified live via the web preview's synthetic-touch-event technique
+      (dispatching a real trace, then reading computed styles/DOM text) before committing, per the
+      user's request to see it before anything got pushed.
+
 ### Not started
 - **App Store screenshots — the actual next step.** Not touched yet at all (item 30D only covered
   text fields/settings). Need iPhone screenshots at one required size (6.9" or 6.5", 1-10 images)
@@ -625,8 +649,6 @@ touched here.
 - **Verifying the "index" back-button fix on-device** (item 30C) — code change made, not yet
   built/tested; deliberately deferred to batch with other changes rather than a build cycle for
   one minor cosmetic fix.
-- **Removing the temporary `debugOfferingsInfo()` diagnostic** (item 30C) — the empty-offerings
-  bug it was added for is resolved; it's just dead weight in the paywall now, not urgent.
 - **Audio** (reward sounds) — not started.
 - **Android adaptive icon layers + splash screen artwork** — the app icon itself is done (item 27); these are the remaining unstyled placeholder assets, out of scope while iOS is the only real target.
 - **1024×1024 subscription promotional image** (item 25) — deliberately still deferred; only matters for win-back offers, offer codes, or App Store Promotion, none of which are set up. The review screenshot itself (also item 25) is now done — see item 30B.
