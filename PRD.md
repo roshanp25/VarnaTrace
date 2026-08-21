@@ -628,27 +628,46 @@ touched here.
       (dispatching a real trace, then reading computed styles/DOM text) before committing, per the
       user's request to see it before anything got pushed.
 
+32. **App Store screenshots designed + uploaded, ASC listing fields confirmed saved (2026-08-21
+    session).** Real screenshots (not raw device captures) built as static PNGs at 1320×2868 (6.9"
+    iPhone size) using the app's actual design tokens (`src/shared/theme.ts` colors), real
+    hand-traced stroke geometry (`assets/data/devanagari-*-strokes.json`, run through the same
+    1200→300 scale transform `handTracedStrokes.ts` uses at runtime — verified against the bundled
+    NotoSansDevanagari font glyph to confirm shape correctness), and real component copy/styling
+    (`PaywallScreen.tsx`, `TracingCanvas.tsx`, `CategoryGridScreen.tsx`, Home's `CategoryCard`).
+    Eight total: a hero shot, real-stroke-detection (correct vs. miss + the actual "Try again!"
+    retry pill), hand-verified stroke order (numbered strokes on अ), breadth (the real Vowels/
+    Consonants/Conjuncts grid with section labels), Easy-vs-Hard side-by-side, a reward/streak
+    shot, a bonus "English & numbers too" closer, and a paywall shot with a custom top banner bar
+    ("Try it free. Unlock the rest when you're ready.") — the paywall one was rebuilt twice to
+    track real pricing changes: RevenueCat dropped to $2.99/mo, $17.99/yr with a 1-week free trial
+    on yearly (item 31's `ef3112b`), so the shot shows the real `describeIntroOffer.ts` output
+    ("1 week free" tag, "then $17.99", "Start Free Trial" CTA) rather than guessed trial copy.
+    Generation script not committed to the repo (one-off marketing asset, scratch-session-only,
+    same as the earlier stroke-reorder script noted elsewhere in this doc). **The user has since
+    uploaded screenshots to ASC and confirmed the item 30D listing fields (Description,
+    Promotional Text, Keywords, Copyright, Category, Age Rating, Pricing, Mac/Vision Pro, Billing
+    Grace Period, Privacy Policy URL, App Review Notes/Contact Info) were actually saved** — that
+    "Not started" bullet from before is resolved. Also: **no "What's New in This Version" field
+    was found in ASC for this app's first version** — matches the earlier guess that it's likely
+    only required starting with the *second* submitted version, not the first.
+    **Real bug found and fixed along the way**: `PaywallScreen` was only reachable via a locked
+    category tile, so once a user subscribes and every tile unlocks, there was no way back into
+    the app to reach "Manage Subscription" — fixed with a Home-screen account icon (item 31's
+    `14c5ff6`) that routes to `/paywall` unconditionally.
+
 ### Not started
-- **App Store screenshots — the actual next step.** Not touched yet at all (item 30D only covered
-  text fields/settings). Need iPhone screenshots at one required size (6.9" or 6.5", 1-10 images)
-  showing real app screens (Home, a category grid, tracing). Can be generated the same way the
-  subscription review screenshot was (headless-browser capture of the real web-preview app,
-  upscaled to exact Apple pixel dimensions — see item 30B for the technique and its gotchas).
-- **Attach build `1.0.0 (6)` to the App Store version** — required before any submission is
-  possible; not yet confirmed done.
-- **Confirm the item 30D field values were actually saved in ASC**, not just discussed — worth a
-  quick pass before submitting: Description/Promotional Text/Keywords/Copyright/Category, Age
-  Rating questionnaire submitted, Age Category Override, Pricing ($0/all countries), Mac/Vision
-  Pro unchecked, Billing Grace Period, Privacy Policy URL pasted into App Information, App Review
-  Notes + Contact Information (**use your own info, not a repeat of the earlier
-  wife's-email-in-the-wrong-field mix-up**).
-- **"What's New in This Version"** — likely optional for a first submission, but check; "Initial
-  release" is fine if something's required.
-- Once all of the above: **Add for Review on both subscriptions** (attach to this version), then
-  **submit the version itself** for real App Store review. This is the actual finish line.
-- **Verifying the "index" back-button fix on-device** (item 30C) — code change made, not yet
-  built/tested; deliberately deferred to batch with other changes rather than a build cycle for
-  one minor cosmetic fix.
+- **Attach a build to the App Store version, then Add for Review on both subscriptions and submit
+  the version itself** — the actual finish line, and the only remaining item on the direct
+  submission path. **Currently blocked**: the user is testing one more small fix in TestFlight
+  before pushing that build to ASC (fix not yet described to me — ask/check back before assuming
+  what it is). Note the build number: PRD text elsewhere in this doc still says `1.0.0 (6)` in a
+  couple of older cross-references — stale, ignore it; the real number is whatever the
+  currently-tested TestFlight build shows (9 as of this session, likely higher by the time this is
+  read since another build is pending for the fix above).
+- **Verifying the "index" back-button fix on-device** (item 30C) — code change has shipped in
+  every build since #7; likely already visible next time the user backs out of a trace screen, but
+  not explicitly confirmed yet.
 - **Audio** (reward sounds) — not started.
 - **Android adaptive icon layers + splash screen artwork** — the app icon itself is done (item 27); these are the remaining unstyled placeholder assets, out of scope while iOS is the only real target.
 - **1024×1024 subscription promotional image** (item 25) — deliberately still deferred; only matters for win-back offers, offer codes, or App Store Promotion, none of which are set up. The review screenshot itself (also item 25) is now done — see item 30B.
@@ -666,11 +685,10 @@ A separate pass audited the pre-redesign flat `App.tsx` screen against professio
 - **Open Decision #4 (stencil authoring)** ended up being a hybrid of the two options it posed: a custom in-repo hand-tracing tool (`tools/stroke-tracer.html` for Hindi, `tools/stroke-tracer-english.html` for English letters — same tool, different character list/font) that the user runs themselves — served locally (`npx serve tools` or `python -m http.server`) and used from a phone over wifi — rather than an external vector tool, traced font glyphs, or AI-generated coordinates. Two secondary approaches were tried and superseded for specific cases: auto-extraction from Wikimedia Commons stroke-order SVGs (still in the repo, `tools/devanagari/import_stroke_order.py`, used for one Hindi vowel's fallback base only) and procedural geometry generation (`tools/generate_english_number_strokes.py`, still actually in use for 10 of the 26 English letters — see item 6 above — after hand-tracing repeatedly out-performed it on proportion/centering issues that took several review rounds to pin down). See `docs/devanagari-stroke-data.md` and `docs/english-numbers-content-pipeline.md` for why and how.
 
 ### Where to look next
-- **Screenshots are the natural next step** (see "Not started" above) — every text field and
-  toggle on the App Store Connect listing was walked through in item 30D, but no screenshots exist
-  yet. After that: attach build `1.0.0 (6)`, do a final pass confirming everything from 30D was
-  actually saved (not just discussed), then Add for Review on both subscriptions + submit the
-  version. Real purchases already work end-to-end (item 30C) — this is genuinely the last stretch.
+- **Screenshots are done, ASC listing fields are confirmed saved (item 32).** What's left is
+  purely the mechanical finish line: attach the current TestFlight build (once the pending small
+  fix is tested), Add for Review on both subscriptions, submit the version. Real purchases already
+  work end-to-end (item 30C) — this really is the last stretch now.
 - If offerings ever come back empty again, check the RevenueCat dashboard first, not the app:
   Product Catalog → Offerings → your offering → each package's per-store product row. A product
   attached to the `premium` *entitlement* does not automatically mean it's placed in an *offering's
