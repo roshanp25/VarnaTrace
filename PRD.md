@@ -656,15 +656,40 @@ touched here.
     the app to reach "Manage Subscription" — fixed with a Home-screen account icon (item 31's
     `14c5ff6`) that routes to `/paywall` unconditionally.
 
+33. **App version + both subscriptions submitted for Apple App Review (2026-08-21 session) —
+    the actual finish line, reached.** The "one more small fix" the previous item was waiting on
+    turned out to be the reward-popup punctuation/button-padding fix (item 31's "This session"
+    entry) — shipped as build `1.0.0 (10)` via `eas build`/`eas submit`, confirmed working on a
+    real device via TestFlight, then attached to the App Store version in ASC.
+    First attempt to "Add for Review" on the Monthly subscription failed twice, both real ASC
+    gotchas worth knowing for next time a first subscription goes through review:
+    - **"Your auto-renewable subscription must be submitted with its subscription group... add an
+      app version to submit."** A first-ever subscription can't be submitted standalone from the
+      Subscriptions page — ASC requires bundling it with an app version. This resolved itself once
+      the build was actually attached to the version (the error fired before that step was done).
+    - **A second, unrelated blocker surfaced once the build was attached**: "select a primary
+      category," "set up Content Rights Information," and "provide App Privacy information" were
+      all still outstanding, despite the item 30D/32 walkthroughs believing the listing was fully
+      confirmed. Resolved live: **Primary Category** → Education (no secondary, matching the
+      original decision — it just hadn't actually saved before). **Content Rights** → "No, it does
+      not contain, show, or access third-party content" (the bundled OFL-licensed Devanagari font
+      is a rendering asset, not third-party "content" in the sense this question means — matches
+      standard practice for apps bundling Google Fonts/OFL typefaces). **App Privacy** (the data
+      "nutrition label," a separate section from the Privacy Policy URL) → researched via
+      RevenueCat's own published guidance rather than guessed, since this is a real compliance
+      declaration: only **Purchases** needs disclosing (RevenueCat uses a fully anonymous internal
+      ID, no login/email/name anywhere in the app, so nothing else applies) — purposes **App
+      Functionality** + **Analytics** (both genuinely apply: entitlement checks/fraud prevention vs.
+      RevenueCat's own dashboard reporting), **not** linked to identity, **not** used for tracking.
+      The two custom subscriber-attribute timestamps (`first_trace_completed_at`,
+      `paywall_last_viewed_at`) don't need separate disclosure per RevenueCat's guidance — they're
+      timestamp-only, no PII, riding under the same Purchases declaration.
+    Both blockers cleared, both subscriptions submitted alongside the version, and the version
+    itself submitted. **App is now in Apple's review queue as of 2026-08-21** — typically hours to
+    a couple of days. Nothing left to do on this path except wait for Apple's decision (or respond
+    if they come back with a rejection/question).
+
 ### Not started
-- **Attach a build to the App Store version, then Add for Review on both subscriptions and submit
-  the version itself** — the actual finish line, and the only remaining item on the direct
-  submission path. **Currently blocked**: the user is testing one more small fix in TestFlight
-  before pushing that build to ASC (fix not yet described to me — ask/check back before assuming
-  what it is). Note the build number: PRD text elsewhere in this doc still says `1.0.0 (6)` in a
-  couple of older cross-references — stale, ignore it; the real number is whatever the
-  currently-tested TestFlight build shows (9 as of this session, likely higher by the time this is
-  read since another build is pending for the fix above).
 - **Verifying the "index" back-button fix on-device** (item 30C) — code change has shipped in
   every build since #7; likely already visible next time the user backs out of a trace screen, but
   not explicitly confirmed yet.
